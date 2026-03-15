@@ -1,0 +1,26 @@
+﻿services:
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    volumes:
+      - ../photos:/data/photos:ro
+      - ../cache:/data/cache
+      - ../data:/app/data
+    environment:
+      - PHOTO_ROOT=/data/photos
+      - THUMB_CACHE=/data/cache
+      - THUMB_SIZE=320
+    ports:
+      - "8010:8010"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped

@@ -1,0 +1,7 @@
+﻿fastapi==0.115.0
+uvicorn==0.30.6
+pydantic-settings==2.4.0
+pillow==10.4.0
+passlib[bcrypt]==1.7.4
+bcrypt==3.2.2
+PyJWT==2.9.0
