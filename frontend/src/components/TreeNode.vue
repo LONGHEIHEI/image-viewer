@@ -25,7 +25,7 @@ const emit = defineEmits<{
   (e: 'open-archive', path: string): void
 }>()
 
-const displayName = computed(() => props.node.name || '根目录')
+const displayName = computed(() => props.node.name || '')
 const typeLabel = computed(() => (props.node.type === 'archive' ? '压缩包' : '目录'))
 
 function handleClick() {

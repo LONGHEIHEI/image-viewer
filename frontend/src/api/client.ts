@@ -1,4 +1,4 @@
-export type FolderItem = {
+﻿export type FolderItem = {
   name: string
   path: string
 }
@@ -37,6 +37,20 @@ export type UserInfo = {
   allowed_paths: string[]
 }
 
+export type CollectionSummary = {
+  id: number
+  name: string
+  requires_password: boolean
+}
+
+export type CollectionAdmin = {
+  id: number
+  name: string
+  paths: string[]
+  requires_password: boolean
+  created_at: string
+}
+
 const API_BASE = '/api'
 
 function getToken() {
@@ -48,6 +62,23 @@ function tokenQuery() {
   return token ? `&token=${encodeURIComponent(token)}` : ''
 }
 
+function getCollectionToken(collectionId: number | string) {
+  return localStorage.getItem(`collection_token_${collectionId}`) || ''
+}
+
+export function setCollectionToken(collectionId: number | string, token: string) {
+  if (token) {
+    localStorage.setItem(`collection_token_${collectionId}`, token)
+  } else {
+    localStorage.removeItem(`collection_token_${collectionId}`)
+  }
+}
+
+function collectionTokenQuery(collectionId: number | string) {
+  const token = getCollectionToken(collectionId)
+  return token ? `&ct=${encodeURIComponent(token)}` : ''
+}
+
 async function requestJson(url: string, options: RequestInit = {}) {
   const token = getToken()
   const headers = new Headers(options.headers || {})
@@ -56,6 +87,14 @@ async function requestJson(url: string, options: RequestInit = {}) {
   const res = await fetch(url, { ...options, headers })
   if (!res.ok) {
     const text = await res.text()
+    try {
+      const data = JSON.parse(text)
+      if (data && typeof data.detail === 'string') {
+        throw new Error(data.detail)
+      }
+    } catch {
+      // ignore parse errors
+    }
     throw new Error(text || '请求失败')
   }
   return res.json()
@@ -120,6 +159,76 @@ export async function deleteUser(userId: number) {
   })
 }
 
+export async function getCollectionsAvailable(): Promise<CollectionSummary[]> {
+  return requestJson(`${API_BASE}/collections/available`)
+}
+
+export async function getCollectionsAdmin(): Promise<CollectionAdmin[]> {
+  return requestJson(`${API_BASE}/collections`)
+}
+
+export async function getCollectionInfo(collectionId: number): Promise<CollectionSummary> {
+  return requestJson(`${API_BASE}/collections/${collectionId}`)
+}
+
+export async function createCollection(payload: { name: string; paths: string[]; password?: string }) {
+  return requestJson(`${API_BASE}/collections`, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+}
+
+export async function updateCollection(
+  collectionId: number,
+  payload: { name?: string; paths?: string[]; password?: string; clear_password?: boolean }
+) {
+  return requestJson(`${API_BASE}/collections/${collectionId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload)
+  })
+}
+
+export async function deleteCollection(collectionId: number) {
+  return requestJson(`${API_BASE}/collections/${collectionId}`, {
+    method: 'DELETE'
+  })
+}
+
+export async function accessCollection(collectionId: number, password?: string) {
+  return requestJson(`${API_BASE}/collections/${collectionId}/access`, {
+    method: 'POST',
+    body: JSON.stringify({ password: password || '' })
+  })
+}
+
+export async function getCollectionFolder(
+  collectionId: number,
+  path = '',
+  page = 1,
+  pageSize = 60
+): Promise<FolderListing> {
+  const url = `${API_BASE}/collections/${collectionId}/folder?path=${encodeURIComponent(path)}&page=${page}&page_size=${pageSize}${collectionTokenQuery(collectionId)}`
+  return requestJson(url)
+}
+
+export async function getCollectionArchive(
+  collectionId: number,
+  path: string,
+  page = 1,
+  pageSize = 80
+): Promise<ArchiveListing> {
+  const url = `${API_BASE}/collections/${collectionId}/archive?path=${encodeURIComponent(path)}&page=${page}&page_size=${pageSize}${collectionTokenQuery(collectionId)}`
+  return requestJson(url)
+}
+
+export function folderCoverUrl(path: string): string {
+  return `${API_BASE}/folder/cover?path=${encodeURIComponent(path)}${tokenQuery()}`
+}
+
+export function collectionFolderCoverUrl(collectionId: number, path: string): string {
+  return `${API_BASE}/collections/${collectionId}/folder/cover?path=${encodeURIComponent(path)}${collectionTokenQuery(collectionId)}${tokenQuery()}`
+}
+
 export function imageUrl(path: string): string {
   return `${API_BASE}/image?path=${encodeURIComponent(path)}${tokenQuery()}`
 }
@@ -134,4 +243,20 @@ export function thumbUrl(path: string): string {
 
 export function archiveThumbUrl(archive: string, file: string): string {
   return `${API_BASE}/archive/thumb?path=${encodeURIComponent(archive)}&file=${encodeURIComponent(file)}${tokenQuery()}`
+}
+
+export function collectionImageUrl(collectionId: number, path: string): string {
+  return `${API_BASE}/collections/${collectionId}/image?path=${encodeURIComponent(path)}${collectionTokenQuery(collectionId)}${tokenQuery()}`
+}
+
+export function collectionArchiveImageUrl(collectionId: number, archive: string, file: string): string {
+  return `${API_BASE}/collections/${collectionId}/archive/image?path=${encodeURIComponent(archive)}&file=${encodeURIComponent(file)}${collectionTokenQuery(collectionId)}${tokenQuery()}`
+}
+
+export function collectionThumbUrl(collectionId: number, path: string): string {
+  return `${API_BASE}/collections/${collectionId}/thumb?path=${encodeURIComponent(path)}${collectionTokenQuery(collectionId)}${tokenQuery()}`
+}
+
+export function collectionArchiveThumbUrl(collectionId: number, archive: string, file: string): string {
+  return `${API_BASE}/collections/${collectionId}/archive/thumb?path=${encodeURIComponent(archive)}&file=${encodeURIComponent(file)}${collectionTokenQuery(collectionId)}${tokenQuery()}`
 }

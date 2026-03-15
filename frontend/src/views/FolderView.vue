@@ -1,34 +1,33 @@
 <template>
-  <div>
-    <div class="top">
-      <button class="ghost" @click="goBack">返回</button>
-      <div>
-        <div class="title">压缩包</div>
-        <div class="subtitle">{{ archive }}</div>
-      </div>
-    </div>
-
-    <div v-if="store.archiveListing" class="panel">
-      <div class="panel-header">
-        <div>
-          <div class="panel-title">图片</div>
-          <div class="panel-sub">{{ store.archiveListing.total_files }} 张</div>
+  <div class="page">
+    <n-card v-if="listing" class="panel panel-tight" :bordered="false">
+      <div class="panel-header panel-stack">
+        <div class="panel-row panel-row-top">
+          <div class="panel-left">
+            <div class="panel-title">图片</div>
+            <div class="panel-subtitle" v-if="archiveLabel">{{ archiveLabel }}</div>
+          </div>
+          <div class="panel-right">
+            <n-button size="small" @click="goBack">返回</n-button>
+          </div>
         </div>
-        <div class="meta">第 {{ store.archiveListing.page }} 页</div>
+        <div class="panel-row panel-row-bottom">
+          <n-input
+            v-model:value="searchTerm"
+            class="panel-search"
+            placeholder="搜索压缩包内图片"
+            clearable
+          />
+          <div class="meta" v-if="listing.total_files">
+            共 {{ listing.total_files }} 张 · 第 {{ listing.page }} 页
+          </div>
+        </div>
       </div>
-      <div class="search">
-        <input v-model="searchTerm" placeholder="搜索压缩包内图片" />
-        <span class="count">已显示 {{ filteredFiles.length }} 张</span>
+      <ImageGrid :images="filteredFiles" :thumb="thumb" @open-image="openArchiveImage" />
+      <div class="load" v-if="listing.has_more">
+        <n-button type="primary" :loading="store.loading" @click="loadMore">加载更多</n-button>
       </div>
-      <ImageGrid
-        :images="filteredFiles"
-        :thumb="thumb"
-        @open-image="openArchiveImage"
-      />
-      <div class="load" v-if="store.archiveListing.has_more">
-        <button class="primary" :disabled="store.loading" @click="loadMore">加载更多</button>
-      </div>
-    </div>
+    </n-card>
 
     <div v-if="store.error" class="error">{{ store.error }}</div>
     <div v-if="store.loading" class="loading">加载中...</div>
@@ -38,151 +37,158 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { NCard, NButton, NInput } from 'naive-ui'
 import { useGalleryStore } from '../store/gallery'
 import ImageGrid from '../components/ImageGrid.vue'
-import { archiveThumbUrl } from '../api/client'
+import { archiveThumbUrl, collectionArchiveThumbUrl } from '../api/client'
 
 const store = useGalleryStore()
 const route = useRoute()
 const router = useRouter()
 
-const archive = String(route.query.archive || '')
+const archive = computed(() => String(route.query.archive || ''))
 const searchTerm = ref('')
 
+const collectionId = computed(() => {
+  const raw = route.query.collection
+  if (raw === undefined || raw === null || raw === '') return null
+  const num = Number(raw)
+  return Number.isFinite(num) ? num : null
+})
+
+const isCollection = computed(() => collectionId.value !== null)
+
+const listing = computed(() =>
+  isCollection.value ? store.collectionArchiveListing : store.archiveListing
+)
+
+const archiveLabel = computed(() => {
+  if (!archive.value) return ''
+  const parts = archive.value.split(/[\\/]+/).filter(Boolean)
+  return parts[parts.length - 1] || archive.value
+})
+
 onMounted(() => {
-  if (archive) {
-    store.loadArchive(archive)
+  if (!archive.value) return
+  if (isCollection.value) {
+    store.loadCollectionArchive(collectionId.value as number, archive.value)
+  } else {
+    store.loadArchive(archive.value)
   }
 })
 
 const filteredFiles = computed(() => {
-  if (!store.archiveListing) return []
-  if (!searchTerm.value.trim()) return store.archiveListing.files
+  if (!listing.value) return []
+  if (!searchTerm.value.trim()) return listing.value.files
   const keyword = searchTerm.value.toLowerCase()
-  return store.archiveListing.files.filter((file) => file.name.toLowerCase().includes(keyword))
+  return listing.value.files.filter((file) => file.name.toLowerCase().includes(keyword))
 })
 
 function openArchiveImage(file: string) {
-  const baseIndex = store.archiveListing?.files.findIndex((item) => item.path === file) ?? 0
-  router.push({ path: '/image', query: { archive, file, index: String(baseIndex) } })
+  const baseIndex = listing.value?.files.findIndex((item) => item.path === file) ?? 0
+  const query: Record<string, string> = {
+    archive: archive.value,
+    file,
+    index: String(baseIndex)
+  }
+  if (isCollection.value) {
+    query.collection = String(collectionId.value)
+  }
+  router.push({ path: '/image', query })
 }
 
 function goBack() {
+  if (isCollection.value) {
+    router.push(`/collection/${collectionId.value}`)
+    return
+  }
   router.push('/')
 }
 
 function loadMore() {
-  if (!store.archiveListing) return
-  store.loadArchive(archive, store.archiveListing.page + 1, store.archiveListing.page_size, true)
+  if (!listing.value) return
+  if (isCollection.value) {
+    store.loadCollectionArchive(
+      collectionId.value as number,
+      archive.value,
+      listing.value.page + 1,
+      listing.value.page_size,
+      true
+    )
+    return
+  }
+  store.loadArchive(archive.value, listing.value.page + 1, listing.value.page_size, true)
 }
 
 function thumb(filePath: string) {
-  return archiveThumbUrl(archive, filePath)
+  if (isCollection.value) {
+    return collectionArchiveThumbUrl(collectionId.value as number, archive.value, filePath)
+  }
+  return archiveThumbUrl(archive.value, filePath)
 }
 </script>
 
 <style scoped>
-.top {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
+.panel-tight :deep(.n-card__content) {
+  padding-top: 16px;
 }
 
-.title {
-  font-weight: 700;
-  font-family: 'Space Grotesk', Arial, sans-serif;
+.panel-stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
 }
 
-.subtitle {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.panel {
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid var(--stroke);
-  border-radius: 20px;
-  padding: 18px;
-  box-shadow: 0 12px 24px rgba(20, 25, 35, 0.08);
-}
-
-.panel-header {
+.panel-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 14px;
   gap: 12px;
 }
 
-.panel-title {
-  font-size: 18px;
-  font-family: 'Space Grotesk', Arial, sans-serif;
-  font-weight: 700;
+.panel-row-top {
+  justify-content: space-between;
 }
 
-.panel-sub {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.meta {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.ghost {
-  background: transparent;
-  border: 1px solid var(--stroke);
-  border-radius: 999px;
-  padding: 6px 14px;
-  cursor: pointer;
-}
-
-.primary {
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 999px;
-  padding: 10px 18px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.load {
-  display: flex;
-  justify-content: center;
-  margin-top: 14px;
-}
-
-.error {
-  color: #b00020;
-  margin-top: 12px;
-}
-
-.loading {
-  margin-top: 8px;
-  color: var(--muted);
-}
-
-.search {
+.panel-left {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 
-.search input {
-  flex: 1;
-  padding: 10px 14px;
-  border-radius: 999px;
-  border: 1px solid var(--stroke);
-  background: #fff;
-  font-size: 14px;
+.panel-right {
+  display: flex;
+  justify-content: flex-end;
 }
 
-.count {
-  font-size: 12px;
+.panel-subtitle {
+  font-size: 13px;
   color: var(--muted);
+  font-weight: 600;
+}
+
+.panel-search {
+  width: 320px;
+  max-width: 40vw;
+  --n-color: #fafafa;
+  --n-color-focus: #fff;
+  --n-color-hover: #fdfdfd;
+  --n-border: rgba(27, 30, 39, 0.08);
+  --n-border-hover: rgba(27, 30, 39, 0.12);
+  --n-border-focus: rgba(27, 30, 39, 0.18);
+  --n-box-shadow-focus: none;
+}
+
+@media (max-width: 960px) {
+  .panel-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .panel-search {
+    width: 100%;
+    max-width: none;
+  }
 }
 </style>

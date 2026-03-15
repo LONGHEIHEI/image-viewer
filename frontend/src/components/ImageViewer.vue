@@ -1,10 +1,5 @@
 <template>
   <div class="viewer">
-    <div class="controls">
-      <button class="ghost" @click="toggleFullscreen">{{ isFullscreen ? '退出全屏' : '全屏' }}</button>
-      <button class="ghost" @click="resetView">重置</button>
-      <span class="zoom">{{ Math.round(scale * 100) }}%</span>
-    </div>
     <div
       ref="stageRef"
       class="stage"
@@ -27,6 +22,10 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 
 const props = defineProps<{ src: string; name: string }>()
+const emit = defineEmits<{
+  (e: 'scale-change', value: number): void
+  (e: 'fullscreen-change', value: boolean): void
+}>()
 
 const stageRef = ref<HTMLElement | null>(null)
 const scale = ref(1)
@@ -93,6 +92,7 @@ async function toggleFullscreen() {
 
 function handleFullscreenChange() {
   isFullscreen.value = Boolean(document.fullscreenElement)
+  emit('fullscreen-change', isFullscreen.value)
 }
 
 onMounted(() => {
@@ -104,11 +104,24 @@ onUnmounted(() => {
 })
 
 watch(
+  scale,
+  (value) => {
+    emit('scale-change', value)
+  },
+  { immediate: true }
+)
+
+watch(
   () => props.src,
   () => {
     resetView()
   }
 )
+
+defineExpose({
+  toggleFullscreen,
+  resetView
+})
 </script>
 
 <style scoped>
@@ -117,25 +130,6 @@ watch(
   flex-direction: column;
   align-items: center;
   gap: 10px;
-}
-
-.controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.ghost {
-  background: transparent;
-  border: 1px solid var(--stroke);
-  border-radius: 999px;
-  padding: 6px 14px;
-  cursor: pointer;
-}
-
-.zoom {
-  font-size: 12px;
-  color: var(--muted);
 }
 
 .stage {

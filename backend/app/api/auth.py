@@ -5,6 +5,7 @@ from app.services.auth import verify_password, create_access_token
 
 router = APIRouter()
 
+
 class LoginRequest(BaseModel):
     username: str
     password: str

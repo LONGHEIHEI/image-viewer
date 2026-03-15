@@ -1,30 +1,30 @@
 <template>
   <div class="page">
     <div class="page-header">
-      <div class="page-title">用户管理</div>
+      <div class="page-title">集合管理</div>
       <div class="page-actions">
         <n-button @click="load">刷新</n-button>
-        <n-button type="primary" @click="openCreate">新增用户</n-button>
+        <n-button type="primary" @click="openCreate">新增集合</n-button>
       </div>
     </div>
 
     <n-card class="panel" :bordered="false">
       <n-list bordered>
-        <n-list-item v-for="user in users" :key="user.id">
+        <n-list-item v-for="item in collections" :key="item.id">
           <div class="row">
             <div>
-              <div class="name">{{ user.username }}</div>
-              <div class="meta">编号：{{ user.id }}</div>
-              <div class="meta">权限：{{ user.is_admin ? '管理员' : '普通用户' }}</div>
-              <div class="meta">允许路径：{{ (user.allowed_paths || []).join(', ') || '全部' }}</div>
+              <div class="name">{{ item.name }}</div>
+              <div class="meta">编号：{{ item.id }}</div>
+              <div class="meta">路径：{{ item.paths.join(', ') }}</div>
+              <div class="meta">密码：{{ item.requires_password ? '已设置' : '无' }}</div>
             </div>
             <n-space size="small">
-              <n-button size="small" @click="openEdit(user)">编辑</n-button>
-              <n-popconfirm @positive-click="remove(user.id)" positive-text="删除" negative-text="取消">
+              <n-button size="small" @click="openEdit(item)">编辑</n-button>
+              <n-popconfirm @positive-click="remove(item.id)" positive-text="删除" negative-text="取消">
                 <template #trigger>
                   <n-button size="small" type="error">删除</n-button>
                 </template>
-                确认删除该用户？
+                确认删除该集合？
               </n-popconfirm>
             </n-space>
           </div>
@@ -34,23 +34,20 @@
       <div v-if="error" class="error">{{ error }}</div>
     </n-card>
 
-    <n-modal v-model:show="showCreate" preset="card" title="新增用户" class="modal">
+    <n-modal v-model:show="showCreate" preset="card" title="新增集合" class="modal">
       <n-form>
-        <n-form-item label="用户名">
-          <n-input v-model:value="newUser.username" placeholder="请输入用户名" />
+        <n-form-item label="集合名称">
+          <n-input v-model:value="newCollection.name" placeholder="请输入集合名称" />
         </n-form-item>
-        <n-form-item label="密码">
-          <n-input v-model:value="newUser.password" type="password" placeholder="请输入密码" />
-        </n-form-item>
-        <n-form-item>
-          <n-checkbox v-model:checked="newUser.is_admin">管理员</n-checkbox>
-        </n-form-item>
-        <n-form-item label="允许访问路径">
+        <n-form-item label="集合路径">
           <n-input
-            v-model:value="newUser.allowedPaths"
+            v-model:value="newCollection.paths"
             type="textarea"
             placeholder="用逗号分隔，例如：set1, set2/sub"
           />
+        </n-form-item>
+        <n-form-item label="访问密码">
+          <n-input v-model:value="newCollection.password" type="password" placeholder="可留空" />
         </n-form-item>
         <n-space justify="end">
           <n-button @click="showCreate = false">取消</n-button>
@@ -59,16 +56,19 @@
       </n-form>
     </n-modal>
 
-    <n-modal v-model:show="showEdit" preset="card" title="编辑用户" class="modal">
+    <n-modal v-model:show="showEdit" preset="card" title="编辑集合" class="modal">
       <n-form>
-        <n-form-item>
-          <n-checkbox v-model:checked="editForm.is_admin">管理员</n-checkbox>
+        <n-form-item label="集合名称">
+          <n-input v-model:value="editForm.name" placeholder="请输入集合名称" />
+        </n-form-item>
+        <n-form-item label="集合路径">
+          <n-input v-model:value="editForm.paths" type="textarea" placeholder="用逗号分隔" />
         </n-form-item>
         <n-form-item label="新密码">
           <n-input v-model:value="editForm.password" type="password" placeholder="不修改请留空" />
         </n-form-item>
-        <n-form-item label="允许访问路径">
-          <n-input v-model:value="editForm.allowedPaths" type="textarea" placeholder="用逗号分隔" />
+        <n-form-item>
+          <n-checkbox v-model:checked="editForm.clearPassword">清空密码</n-checkbox>
         </n-form-item>
         <n-space justify="end">
           <n-button @click="showEdit = false">取消</n-button>
@@ -87,35 +87,41 @@ import {
   NList,
   NListItem,
   NInput,
-  NCheckbox,
   NModal,
   NForm,
   NFormItem,
   NSpace,
   NPopconfirm,
+  NCheckbox,
   useNotification
 } from 'naive-ui'
-import { listUsers, createUser, updateUser, deleteUser, type UserInfo } from '../api/client'
+import {
+  getCollectionsAdmin,
+  createCollection,
+  updateCollection,
+  deleteCollection,
+  type CollectionAdmin
+} from '../api/client'
 
-const users = ref<UserInfo[]>([])
+const collections = ref<CollectionAdmin[]>([])
 const error = ref('')
 const notification = useNotification()
 
 const showCreate = ref(false)
 const showEdit = ref(false)
 
-const newUser = ref({
-  username: '',
-  password: '',
-  is_admin: false,
-  allowedPaths: ''
+const newCollection = ref({
+  name: '',
+  paths: '',
+  password: ''
 })
 
-const editing = ref<UserInfo | null>(null)
+const editing = ref<CollectionAdmin | null>(null)
 const editForm = ref({
-  is_admin: false,
+  name: '',
+  paths: '',
   password: '',
-  allowedPaths: ''
+  clearPassword: false
 })
 
 onMounted(() => {
@@ -132,7 +138,7 @@ function parsePaths(input: string) {
 async function load() {
   error.value = ''
   try {
-    users.value = await listUsers()
+    collections.value = await getCollectionsAdmin()
   } catch (err) {
     error.value = err instanceof Error ? err.message : '加载失败'
     notification.error({ title: '加载失败', content: error.value })
@@ -140,22 +146,20 @@ async function load() {
 }
 
 function openCreate() {
-  newUser.value = { username: '', password: '', is_admin: false, allowedPaths: '' }
+  newCollection.value = { name: '', paths: '', password: '' }
   showCreate.value = true
 }
 
 async function create() {
   error.value = ''
   try {
-    await createUser({
-      username: newUser.value.username,
-      password: newUser.value.password,
-      is_admin: newUser.value.is_admin,
-      allowed_paths: parsePaths(newUser.value.allowedPaths)
+    await createCollection({
+      name: newCollection.value.name,
+      paths: parsePaths(newCollection.value.paths),
+      password: newCollection.value.password || undefined
     })
     showCreate.value = false
-    notification.success({ title: '创建成功', content: `用户 ${newUser.value.username} 已创建` })
-    newUser.value = { username: '', password: '', is_admin: false, allowedPaths: '' }
+    notification.success({ title: '创建成功', content: `集合 ${newCollection.value.name} 已创建` })
     await load()
   } catch (err) {
     error.value = err instanceof Error ? err.message : '创建失败'
@@ -163,12 +167,13 @@ async function create() {
   }
 }
 
-function openEdit(user: UserInfo) {
-  editing.value = user
+function openEdit(item: CollectionAdmin) {
+  editing.value = item
   editForm.value = {
-    is_admin: user.is_admin,
+    name: item.name,
+    paths: item.paths.join(', '),
     password: '',
-    allowedPaths: (user.allowed_paths || []).join(', ')
+    clearPassword: false
   }
   showEdit.value = true
 }
@@ -177,14 +182,14 @@ async function save() {
   if (!editing.value) return
   error.value = ''
   try {
-    await updateUser(editing.value.id, {
-      is_admin: editForm.value.is_admin,
+    await updateCollection(editing.value.id, {
+      name: editForm.value.name,
+      paths: parsePaths(editForm.value.paths),
       password: editForm.value.password || undefined,
-      allowed_paths: parsePaths(editForm.value.allowedPaths)
+      clear_password: editForm.value.clearPassword
     })
     showEdit.value = false
-    notification.success({ title: '更新成功', content: `已更新用户 ${editing.value.username}` })
-    editing.value = null
+    notification.success({ title: '更新成功', content: `已更新集合 ${editForm.value.name}` })
     await load()
   } catch (err) {
     error.value = err instanceof Error ? err.message : '更新失败'
@@ -192,11 +197,11 @@ async function save() {
   }
 }
 
-async function remove(userId: number) {
+async function remove(id: number) {
   error.value = ''
   try {
-    await deleteUser(userId)
-    notification.success({ title: '删除成功', content: '用户已删除' })
+    await deleteCollection(id)
+    notification.success({ title: '删除成功', content: '集合已删除' })
     await load()
   } catch (err) {
     error.value = err instanceof Error ? err.message : '删除失败'
@@ -219,6 +224,6 @@ async function remove(userId: number) {
 }
 
 .modal {
-  width: min(520px, 92vw);
+  width: min(560px, 92vw);
 }
 </style>

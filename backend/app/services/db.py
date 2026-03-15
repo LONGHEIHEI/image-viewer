@@ -34,6 +34,17 @@ def init_db():
             )
             '''
         )
+        conn.execute(
+            '''
+            CREATE TABLE IF NOT EXISTS collections (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT UNIQUE NOT NULL,
+                paths TEXT NOT NULL DEFAULT '[]',
+                password_hash TEXT,
+                created_at TEXT NOT NULL
+            )
+            '''
+        )
         conn.commit()
     finally:
         conn.close()
@@ -46,6 +57,16 @@ def row_to_user(row: sqlite3.Row) -> dict:
         'password_hash': row['password_hash'],
         'is_admin': bool(row['is_admin']),
         'allowed_paths': json.loads(row['allowed_paths'] or '[]'),
+        'created_at': row['created_at']
+    }
+
+
+def row_to_collection(row: sqlite3.Row) -> dict:
+    return {
+        'id': row['id'],
+        'name': row['name'],
+        'paths': json.loads(row['paths'] or '[]'),
+        'password_hash': row['password_hash'],
         'created_at': row['created_at']
     }
 
@@ -118,6 +139,86 @@ def delete_user(user_id: int):
     conn = get_connection()
     try:
         conn.execute('DELETE FROM users WHERE id = ?', (user_id,))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def list_collections():
+    conn = get_connection()
+    try:
+        rows = conn.execute('SELECT * FROM collections ORDER BY id ASC').fetchall()
+        return [row_to_collection(row) for row in rows]
+    finally:
+        conn.close()
+
+
+def get_collection_by_id(collection_id: int):
+    conn = get_connection()
+    try:
+        row = conn.execute('SELECT * FROM collections WHERE id = ?', (collection_id,)).fetchone()
+        return row_to_collection(row) if row else None
+    finally:
+        conn.close()
+
+
+def get_collection_by_name(name: str):
+    conn = get_connection()
+    try:
+        row = conn.execute('SELECT * FROM collections WHERE name = ?', (name,)).fetchone()
+        return row_to_collection(row) if row else None
+    finally:
+        conn.close()
+
+
+def create_collection(name: str, paths: list[str], password_hash: str | None):
+    conn = get_connection()
+    try:
+        conn.execute(
+            'INSERT INTO collections (name, paths, password_hash, created_at) VALUES (?, ?, ?, ?)',
+            (name, json.dumps(paths), password_hash, datetime.utcnow().isoformat())
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def update_collection(
+    collection_id: int,
+    *,
+    name: str | None = None,
+    paths: list[str] | None = None,
+    password_hash: str | None = None,
+    clear_password: bool = False
+):
+    conn = get_connection()
+    try:
+        fields = []
+        values = []
+        if name is not None:
+            fields.append('name = ?')
+            values.append(name)
+        if paths is not None:
+            fields.append('paths = ?')
+            values.append(json.dumps(paths))
+        if password_hash is not None:
+            fields.append('password_hash = ?')
+            values.append(password_hash)
+        if clear_password:
+            fields.append('password_hash = NULL')
+        if not fields:
+            return
+        values.append(collection_id)
+        conn.execute(f"UPDATE collections SET {', '.join(fields)} WHERE id = ?", values)
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def delete_collection(collection_id: int):
+    conn = get_connection()
+    try:
+        conn.execute('DELETE FROM collections WHERE id = ?', (collection_id,))
         conn.commit()
     finally:
         conn.close()

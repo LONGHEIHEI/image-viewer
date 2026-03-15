@@ -4,6 +4,8 @@ import FolderView from '../views/FolderView.vue'
 import ImageView from '../views/ImageView.vue'
 import LoginView from '../views/LoginView.vue'
 import UsersView from '../views/UsersView.vue'
+import CollectionView from '../views/CollectionView.vue'
+import CollectionsManageView from '../views/CollectionsManageView.vue'
 import { useAuthStore } from '../store/auth'
 
 export const router = createRouter({
@@ -13,7 +15,9 @@ export const router = createRouter({
     { path: '/', component: LibraryView, meta: { requiresAuth: true } },
     { path: '/folder', component: FolderView, meta: { requiresAuth: true } },
     { path: '/image', component: ImageView, meta: { requiresAuth: true } },
-    { path: '/users', component: UsersView, meta: { requiresAuth: true, requiresAdmin: true } }
+    { path: '/collection/:id', component: CollectionView, meta: { requiresAuth: true } },
+    { path: '/users', component: UsersView, meta: { requiresAuth: true, requiresAdmin: true } },
+    { path: '/collections', component: CollectionsManageView, meta: { requiresAuth: true, requiresAdmin: true } }
   ]
 })
 

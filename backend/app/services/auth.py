@@ -28,7 +28,19 @@ def create_access_token(username: str) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
     payload = {
         'sub': username,
-        'exp': expire
+        'exp': expire,
+        'typ': 'user'
+    }
+    return jwt.encode(payload, settings.secret_key, algorithm='HS256')
+
+
+def create_collection_token(collection_id: int) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
+    payload = {
+        'sub': 'collection',
+        'cid': collection_id,
+        'exp': expire,
+        'typ': 'collection'
     }
     return jwt.encode(payload, settings.secret_key, algorithm='HS256')
 

@@ -55,7 +55,7 @@ def _read_7z(path: Path, file_path: str):
 
 def _list_rar(path: Path):
     if rarfile is None:
-        raise ArchiveSupportError('需要安装 rarfile 与 unrar 才能支持 RAR')
+        raise ArchiveSupportError('需要安装 rarfile 和 unrar 才能支持 RAR')
     try:
         with rarfile.RarFile(path) as rf:
             return [info.filename for info in rf.infolist() if not info.is_dir()]
@@ -65,7 +65,7 @@ def _list_rar(path: Path):
 
 def _read_rar(path: Path, file_path: str):
     if rarfile is None:
-        raise ArchiveSupportError('需要安装 rarfile 与 unrar 才能支持 RAR')
+        raise ArchiveSupportError('需要安装 rarfile 和 unrar 才能支持 RAR')
     try:
         with rarfile.RarFile(path) as rf:
             with rf.open(file_path) as fp:
@@ -85,7 +85,7 @@ def _archive_type(path: Path) -> str:
     raise ArchiveSupportError('不支持的压缩格式')
 
 
-def list_archive(archive_path: str, root: str, page: int = 1, page_size: int = 80):
+def list_archive(archive_path: str, root: str, page: int = 1, page_size: int = 20):
     path = Path(archive_path)
     if not path.exists() or not path.is_file():
         raise FileNotFoundError(f'Archive not found: {archive_path}')

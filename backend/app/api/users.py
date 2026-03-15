@@ -7,11 +7,13 @@ from app.services.deps import require_admin, get_current_user
 
 router = APIRouter()
 
+
 class UserCreate(BaseModel):
     username: str
     password: str
     is_admin: bool = False
     allowed_paths: List[str] = []
+
 
 class UserUpdate(BaseModel):
     password: str | None = None

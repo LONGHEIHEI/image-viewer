@@ -1,7 +1,9 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
 from fastapi.responses import FileResponse, Response
+import random
+from pathlib import Path
 from app.config import Settings
-from app.services.fs_indexer import list_folder, build_tree
+from app.services.fs_indexer import list_folder, build_tree, IMAGE_EXTS
 from app.services.archive_reader import list_archive, stream_archive_image, ArchiveSupportError
 from app.services.thumbnailer import get_thumbnail, get_archive_thumbnail
 from app.services.deps import get_current_user
@@ -22,14 +24,14 @@ def safe_list_folder(path: str, page: int, page_size: int):
     try:
         return list_folder(path, settings.photo_root, page=page, page_size=page_size)
     except FileNotFoundError:
-        raise HTTPException(status_code=404, detail='目录不存在')
+        raise HTTPException(status_code=404, detail='目录不存在，请检查路径')
 
 
 def safe_list_archive(path: str, page: int, page_size: int):
     try:
         return list_archive(path, settings.photo_root, page=page, page_size=page_size)
     except FileNotFoundError:
-        raise HTTPException(status_code=404, detail='压缩包不存在')
+        raise HTTPException(status_code=404, detail='压缩包不存在，请检查路径')
     except ArchiveSupportError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
@@ -87,6 +89,19 @@ def build_tree_for_user(root_abs: str, allowed_paths: list[str], depth: int):
     return root_node
 
 
+def _random_image_in_folder(abs_path: str) -> str | None:
+    folder = Path(abs_path)
+    if not folder.exists() or not folder.is_dir():
+        raise FileNotFoundError(abs_path)
+    candidates = [
+        entry for entry in folder.iterdir()
+        if entry.is_file() and entry.suffix.lower() in IMAGE_EXTS
+    ]
+    if not candidates:
+        return None
+    return str(random.choice(candidates))
+
+
 @router.get('/tree')
 def get_tree(
     root: str = Query(default=''),
@@ -102,7 +117,7 @@ def get_tree(
 def get_folder(
     path: str,
     page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=60, ge=1, le=500),
+    page_size: int = Query(default=20, ge=1, le=500),
     user: dict = Depends(get_current_user)
 ):
     allowed = require_allowed_paths(user)
@@ -114,11 +129,28 @@ def get_folder(
     return filter_listing(listing, allowed)
 
 
+@router.get('/folder/cover')
+def get_folder_cover(path: str, user: dict = Depends(get_current_user)):
+    allowed = require_allowed_paths(user)
+    base = safe_resolve(path)
+    rel_path = rel_from_abs(base, settings.photo_root)
+    if not is_within_or_ancestor(rel_path, allowed):
+        raise HTTPException(status_code=403, detail='无权限访问')
+    try:
+        image_path = _random_image_in_folder(base)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail='目录不存在，请检查路径')
+    if not image_path:
+        raise HTTPException(status_code=404, detail='目录内没有图片')
+    thumb_path = get_thumbnail(image_path, settings.thumb_cache, settings.thumb_size)
+    return FileResponse(thumb_path)
+
+
 @router.get('/archive')
 def get_archive(
     path: str,
     page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=80, ge=1, le=500),
+    page_size: int = Query(default=20, ge=1, le=500),
     user: dict = Depends(get_current_user)
 ):
     allowed = require_allowed_paths(user)

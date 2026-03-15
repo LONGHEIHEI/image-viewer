@@ -5,7 +5,7 @@ IMAGE_EXTS = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'}
 ARCHIVE_EXTS = {'.zip', '.7z', '.rar'}
 
 
-def list_folder(folder_path: str, root: str, page: int = 1, page_size: int = 60):
+def list_folder(folder_path: str, root: str, page: int = 1, page_size: int = 20):
     path = Path(folder_path)
     if not path.exists() or not path.is_dir():
         raise FileNotFoundError(f'Folder not found: {folder_path}')

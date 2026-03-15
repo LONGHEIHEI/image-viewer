@@ -1,8 +1,10 @@
-import { defineStore } from 'pinia'
+﻿import { defineStore } from 'pinia'
 import {
   getFolder,
   getArchive,
   getTree,
+  getCollectionFolder,
+  getCollectionArchive,
   type FolderListing,
   type ArchiveListing,
   type TreeNode
@@ -18,10 +20,15 @@ export const useGalleryStore = defineStore('gallery', {
     loading: false,
     treeLoading: false,
     error: '' as string,
-    treeError: '' as string
+    treeError: '' as string,
+    collectionId: null as number | null,
+    collectionFolder: '' as string,
+    collectionListing: null as FolderListing | null,
+    collectionArchivePath: '' as string,
+    collectionArchiveListing: null as ArchiveListing | null
   }),
   actions: {
-    async loadFolder(path = '', page = 1, pageSize = 60, append = false) {
+    async loadFolder(path = '', page = 1, pageSize = 20, append = false) {
       this.loading = true
       this.error = ''
       try {
@@ -43,7 +50,7 @@ export const useGalleryStore = defineStore('gallery', {
         this.loading = false
       }
     },
-    async loadArchive(path: string, page = 1, pageSize = 80, append = false) {
+    async loadArchive(path: string, page = 1, pageSize = 20, append = false) {
       this.loading = true
       this.error = ''
       try {
@@ -72,6 +79,62 @@ export const useGalleryStore = defineStore('gallery', {
         this.treeError = err instanceof Error ? err.message : '未知错误'
       } finally {
         this.treeLoading = false
+      }
+    },
+    async loadCollectionFolder(
+      collectionId: number,
+      path = '',
+      page = 1,
+      pageSize = 20,
+      append = false
+    ) {
+      this.loading = true
+      this.error = ''
+      try {
+        this.collectionId = collectionId
+        this.collectionFolder = path
+        const data = await getCollectionFolder(collectionId, path, page, pageSize)
+        if (append && this.collectionListing && this.collectionListing.folder === data.folder) {
+          this.collectionListing = {
+            ...data,
+            folders: this.collectionListing.folders,
+            archives: this.collectionListing.archives,
+            images: [...this.collectionListing.images, ...data.images]
+          }
+        } else {
+          this.collectionListing = data
+        }
+      } catch (err) {
+        this.error = err instanceof Error ? err.message : '未知错误'
+      } finally {
+        this.loading = false
+      }
+    },
+    async loadCollectionArchive(
+      collectionId: number,
+      path: string,
+      page = 1,
+      pageSize = 20,
+      append = false
+    ) {
+      this.loading = true
+      this.error = ''
+      try {
+        this.collectionId = collectionId
+        this.collectionArchivePath = path
+        const data = await getCollectionArchive(collectionId, path, page, pageSize)
+        if (append && this.collectionArchiveListing && this.collectionArchiveListing.archive === data.archive) {
+          this.collectionArchiveListing = {
+            ...data,
+            files: [...this.collectionArchiveListing.files, ...data.files]
+          }
+        } else {
+          this.collectionArchiveListing = data
+        }
+      } catch (err) {
+        this.error = err instanceof Error ? err.message : '未知错误'
+      } finally {
+        this.loading = false
       }
     }
   }
