@@ -134,8 +134,8 @@ defineExpose({
 
 .stage {
   background: #fff;
-  padding: 18px;
-  border-radius: 18px;
+  padding: 0;
+  border-radius: 0;
   box-shadow: var(--shadow);
   max-width: 100%;
   overflow: hidden;
@@ -150,7 +150,7 @@ defineExpose({
 .stage img {
   max-width: min(100%, 1100px);
   max-height: 75vh;
-  border-radius: 12px;
+  border-radius: 0;
   display: block;
   transition: transform 0.05s linear;
 }

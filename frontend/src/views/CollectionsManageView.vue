@@ -1,7 +1,7 @@
 <template>
   <div class="page">
     <div class="page-header">
-      <div class="page-title">集合管理</div>
+      <div class="page-title">集合</div>
       <div class="page-actions">
         <n-button @click="load">刷新</n-button>
         <n-button type="primary" @click="openCreate">新增集合</n-button>
