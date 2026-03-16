@@ -2,7 +2,7 @@
   <div class="page image-page">
     <div class="page-header">
       <div class="page-actions">
-        <span v-if="totalCount" class="page-meta-badge">共 {{ totalCount }} 张</span>
+        <span v-if="positionLabel" class="page-meta-badge">{{ positionLabel }}</span>
         <n-button size="small" :disabled="!hasPrev" @click="goPrev">上一张</n-button>
         <n-button size="small" :disabled="!hasNext" @click="goNext">下一张</n-button>
         <n-button size="small" @click="toggleFullscreen">
@@ -120,6 +120,17 @@ const totalCount = computed(() => {
   }
   if (archive.value) return store.archiveListing?.total_files ?? 0
   return store.listing?.total_images ?? 0
+})
+const currentPosition = computed(() => {
+  if (currentIndex.value >= 0) return currentIndex.value + 1
+  if (hasIndex.value && Number.isFinite(indexParam.value) && totalCount.value > 0) {
+    return Math.min(Math.max(indexParam.value + 1, 1), totalCount.value)
+  }
+  return 0
+})
+const positionLabel = computed(() => {
+  if (!totalCount.value || !currentPosition.value) return ''
+  return `${currentPosition.value}/${totalCount.value}`
 })
 const hasMore = computed(() => {
   if (isCollection.value) {
@@ -289,6 +300,7 @@ onUnmounted(() => {
 .viewer-shell {
   display: grid;
   min-width: 0;
+  padding-top: 6px;
 }
 
 @media (max-width: 960px) {

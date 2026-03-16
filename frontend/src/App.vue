@@ -39,7 +39,10 @@
               <div class="mobile-page-title">{{ currentMobileTitle }}</div>
             </div>
           </div>
-          <div class="user" v-if="showMobileUser">
+          <div class="topbar-meta" v-if="showTopbarCollectionCount">
+            {{ topbarCollectionCount }}
+          </div>
+          <div class="user" v-else-if="showMobileUser">
             <div class="name">{{ auth.user.username }}</div>
           </div>
         </div>
@@ -68,6 +71,10 @@
           </template>
         </n-button>
 
+        <div v-if="showFloatingCollectionCount" class="immersive-meta-badge">
+          {{ topbarCollectionCount }}
+        </div>
+
         <n-layout has-sider class="app-shell">
           <n-layout-sider v-if="showSider" class="app-sider" width="220">
             <div class="sider-inner">
@@ -88,7 +95,7 @@
             </div>
           </n-layout-sider>
           <n-layout-content class="app-content">
-            <div :class="['page-container', { 'page-container--image': isImageRoute }]">
+            <div :class="['page-container', { 'page-container--image': isImageRoute, 'page-container--collection': isCollectionRoute }]">
               <router-view />
             </div>
           </n-layout-content>
@@ -155,15 +162,23 @@ const showMenu = computed(() => {
 })
 
 const isImageRoute = computed(() => route.path === '/image')
+const isCollectionRoute = computed(() => route.path.startsWith('/collection/'))
 const showMobileTopbar = computed(() => showMenu.value && isMobile.value && !isStandalonePwa.value)
-const showTopbarBackButton = computed(() => isImageRoute.value)
-const showFloatingBackButton = computed(() => showMenu.value && isMobile.value && isStandalonePwa.value && isImageRoute.value)
-const showFloatingMenuButton = computed(() => showMenu.value && isMobile.value && isStandalonePwa.value && !isImageRoute.value)
+const showTopbarBackButton = computed(() => isImageRoute.value || isCollectionRoute.value)
+const showFloatingBackButton = computed(() => showMenu.value && isMobile.value && isStandalonePwa.value && (isImageRoute.value || isCollectionRoute.value))
+const showFloatingMenuButton = computed(() => showMenu.value && isMobile.value && isStandalonePwa.value && !isImageRoute.value && !isCollectionRoute.value)
 const showFloatingNavButton = computed(() => showFloatingBackButton.value || showFloatingMenuButton.value)
 const showSider = computed(() => showMenu.value && !isMobile.value)
 const drawerWidth = computed(() => (isMobile.value ? 288 : 260))
 const showBrandHeader = computed(() => route.meta.topLevel !== false)
 const showMobileUser = computed(() => showBrandHeader.value && Boolean(auth.user))
+const topbarCollectionCount = computed(() => {
+  if (!isCollectionRoute.value) return ''
+  const total = Number(gallery.collectionListing?.total_images || 0)
+  return total > 0 ? `共 ${total} 张` : ''
+})
+const showTopbarCollectionCount = computed(() => showMobileTopbar.value && Boolean(topbarCollectionCount.value))
+const showFloatingCollectionCount = computed(() => showMenu.value && isMobile.value && isStandalonePwa.value && Boolean(topbarCollectionCount.value))
 
 function basename(value: string) {
   const parts = value.split(/[\\/]+/).filter(Boolean)
@@ -385,10 +400,42 @@ onBeforeUnmount(() => {
   backdrop-filter: blur(12px);
 }
 
+.immersive-meta-badge {
+  position: fixed;
+  top: calc(12px + env(safe-area-inset-top));
+  right: calc(12px + env(safe-area-inset-right));
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(27, 30, 39, 0.08);
+  box-shadow: 0 10px 24px rgba(20, 25, 35, 0.14);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  backdrop-filter: blur(12px);
+}
+
 .topbar-left {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.topbar-meta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(27, 30, 39, 0.05);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .app-shell {
@@ -406,6 +453,10 @@ onBeforeUnmount(() => {
 
 .page-container--image {
   padding-top: 0;
+}
+
+.page-container--collection {
+  padding-top: 6px;
 }
 
 .sider-inner {
@@ -529,6 +580,11 @@ onBeforeUnmount(() => {
     left: calc(10px + env(safe-area-inset-left));
   }
 
+  .immersive-meta-badge {
+    top: calc(10px + env(safe-area-inset-top));
+    right: calc(10px + env(safe-area-inset-right));
+  }
+
   .topbar-left {
     min-width: 0;
   }
@@ -555,6 +611,10 @@ onBeforeUnmount(() => {
       0 calc(10px + env(safe-area-inset-right))
       calc(108px + env(safe-area-inset-bottom))
       calc(10px + env(safe-area-inset-left));
+  }
+
+  .page-container--collection {
+    padding-top: 2px;
   }
 }
 </style>

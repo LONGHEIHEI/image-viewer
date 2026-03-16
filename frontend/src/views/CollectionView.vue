@@ -1,16 +1,6 @@
 <template>
   <div class="page">
-    <div class="page-header">
-      <div v-if="store.collectionFolder" class="title-with-crumbs">
-        <Breadcrumbs
-          class="header-crumbs"
-          :path="store.collectionFolder"
-          :root-label="collectionName"
-          compact
-          @navigate="openFolder"
-        />
-      </div>
-      <div v-else class="page-title mobile-topbar-title-hidden">{{ collectionName }}</div>
+    <div class="page-header page-header--actions-only page-header--mobile-hidden">
       <div class="page-actions">
         <span v-if="store.collectionListing?.total_images" class="page-meta-badge">
           共 {{ store.collectionListing.total_images }} 张
@@ -42,11 +32,6 @@
         )
       "
     >
-      <div class="panel-header image-meta-header">
-        <div class="meta" v-if="store.collectionListing.total_images">
-          共 {{ store.collectionListing.total_images }} 张 · 第 {{ store.collectionListing.page }} 页
-        </div>
-      </div>
       <ImageGrid
         v-if="store.collectionListing.images.length"
         :images="store.collectionListing.images"
@@ -89,7 +74,6 @@ import {
 import { useGalleryStore } from '../store/gallery'
 import FolderGrid from '../components/FolderGrid.vue'
 import ImageGrid from '../components/ImageGrid.vue'
-import Breadcrumbs from '../components/Breadcrumbs.vue'
 import {
   accessCollection,
   collectionThumbUrl,
@@ -251,16 +235,8 @@ function goBack() {
   width: min(420px, 92vw);
 }
 
-.title-with-crumbs {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  flex-wrap: wrap;
-}
-
-.header-crumbs {
-  margin: 0;
-  min-width: 0;
+.page-header--actions-only {
+  justify-content: flex-end;
 }
 
 .collection-section {
@@ -269,21 +245,16 @@ function goBack() {
 }
 
 .image-panel {
-  padding-top: 6px;
-  border-top: 1px solid rgba(27, 30, 39, 0.06);
-}
-
-.image-meta-header {
-  justify-content: flex-end;
+  padding-top: 0;
 }
 
 @media (max-width: 960px) {
-  .title-with-crumbs {
-    width: 100%;
+  .page-header--mobile-hidden {
+    display: none;
   }
 
-  .header-crumbs {
-    width: 100%;
+  .page-header--actions-only {
+    justify-content: flex-start;
   }
 
   .collection-section {
@@ -291,7 +262,7 @@ function goBack() {
   }
 
   .image-panel {
-    padding-top: 4px;
+    padding-top: 0;
   }
 }
 </style>
