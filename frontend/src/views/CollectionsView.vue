@@ -9,9 +9,9 @@
         v-for="item in collections"
         :key="item.id"
         class="collection-card"
-        @click="openCollection(item.id)"
+        @click="handleCollectionClick(item)"
       >
-        <div class="cover">
+        <div :class="['cover', { 'cover--private': item.privacy_enabled && !isRevealed(`cover:${item.id}`) }]">
           <img
             :src="collectionCoverUrl(item.id)"
             :alt="item.name"
@@ -20,7 +20,9 @@
           />
           <div class="cover-fallback">图集封面</div>
           <div class="cover-sheen"></div>
+          <div v-if="item.privacy_enabled && !isRevealed(`cover:${item.id}`)" class="privacy-mask">点击显示</div>
           <div v-if="item.requires_password" class="cover-tag">需密码</div>
+          <div v-if="item.privacy_enabled" class="cover-tag cover-tag--secondary">隐私</div>
         </div>
         <div class="title">{{ item.name }}</div>
       </div>
@@ -34,9 +36,11 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { getCollectionsAvailable, collectionCoverUrl, type CollectionSummary } from '../api/client'
+import { usePrivacyReveal } from '../composables/usePrivacyReveal'
 
 const router = useRouter()
 const collections = ref<CollectionSummary[]>([])
+const { isRevealed, reveal } = usePrivacyReveal('collection-cover-privacy')
 
 onMounted(async () => {
   collections.value = await getCollectionsAvailable()
@@ -44,6 +48,14 @@ onMounted(async () => {
 
 function openCollection(id: number) {
   router.push(`/collection/${id}`)
+}
+
+function handleCollectionClick(item: CollectionSummary) {
+  if (item.privacy_enabled && !isRevealed(`cover:${item.id}`)) {
+    reveal(`cover:${item.id}`)
+    return
+  }
+  openCollection(item.id)
 }
 
 function onCoverError(event: Event) {
@@ -97,6 +109,11 @@ function onCoverError(event: Event) {
   display: none;
 }
 
+.cover--private img {
+  filter: blur(22px) saturate(0.72);
+  transform: scale(1.05);
+}
+
 .cover-fallback {
   position: absolute;
   inset: 0;
@@ -124,6 +141,21 @@ function onCoverError(event: Event) {
   pointer-events: none;
 }
 
+.privacy-mask {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(20, 25, 35, 0.28);
+  backdrop-filter: blur(10px);
+}
+
 .cover-tag {
   position: absolute;
   left: 10px;
@@ -133,6 +165,11 @@ function onCoverError(event: Event) {
   font-size: 11px;
   color: #fff;
   background: rgba(0, 0, 0, 0.55);
+}
+
+.cover-tag--secondary {
+  left: auto;
+  right: 10px;
 }
 
 .title {

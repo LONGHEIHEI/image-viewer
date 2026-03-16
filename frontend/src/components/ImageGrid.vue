@@ -10,11 +10,15 @@
         v-for="image in column"
         :key="image.path"
         class="tile"
-        @click="$emit('open-image', image.path)"
+        @click="handleTileClick(image.path)"
         @contextmenu.prevent="openMenu($event, image)"
       >
-        <div class="thumb" :data-title="image.name">
+        <div
+          :class="['thumb', { 'thumb--private': privacyEnabled && !isRevealed(`image:${image.path}`) }]"
+          :data-title="image.name"
+        >
           <img :src="thumb(image.path)" :alt="image.name" loading="lazy" @load="handleImageLoad($event, image.path)" />
+          <div v-if="privacyEnabled && !isRevealed(`image:${image.path}`)" class="privacy-mask">点击显示</div>
         </div>
       </div>
     </div>
@@ -47,11 +51,21 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { NDropdown, NModal } from 'naive-ui'
 import type { FolderItem } from '../api/client'
+import { usePrivacyReveal } from '../composables/usePrivacyReveal'
 
-const props = defineProps<{ images: FolderItem[]; thumb: (path: string) => string }>()
+const props = defineProps<{
+  images: FolderItem[]
+  thumb: (path: string) => string
+  privacyEnabled?: boolean
+  privacyStorageKey?: string
+}>()
+
+const emit = defineEmits<{
+  (event: 'open-image', path: string): void
+}>()
 
 const menuVisible = ref(false)
 const menuX = ref(0)
@@ -62,6 +76,9 @@ const columnCount = ref(2)
 const masonryColumns = ref<FolderItem[][]>([])
 const columnRefs = ref<HTMLElement[]>([])
 const imageHeights = ref<Record<string, number>>({})
+const revealStorageKey = computed(() => props.privacyStorageKey || '')
+const privacyEnabled = computed(() => Boolean(props.privacyEnabled))
+const { isRevealed, reveal } = usePrivacyReveal(revealStorageKey)
 
 const menuOptions = [{ label: '属性', key: 'props' }]
 
@@ -134,6 +151,14 @@ function handleImageLoad(event: Event, path: string) {
     ...imageHeights.value,
     [path]: renderedHeight
   }
+}
+
+function handleTileClick(path: string) {
+  if (privacyEnabled.value && !isRevealed(`image:${path}`)) {
+    reveal(`image:${path}`)
+    return
+  }
+  emit('open-image', path)
 }
 
 watch(
@@ -245,6 +270,26 @@ function fileExt(name?: string) {
 .thumb img {
   width: 100%;
   display: block;
+}
+
+.thumb--private img {
+  filter: blur(22px) saturate(0.72);
+  transform: scale(1.05);
+}
+
+.privacy-mask {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(20, 25, 35, 0.28);
+  backdrop-filter: blur(10px);
 }
 
 .thumb::after {

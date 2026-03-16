@@ -48,6 +48,7 @@ def init_db():
                 password_hash TEXT,
                 cover_path TEXT,
                 aggregate_subdirs INTEGER NOT NULL DEFAULT 0,
+                privacy_enabled INTEGER NOT NULL DEFAULT 0,
                 created_at TEXT NOT NULL
             )
             '''
@@ -56,6 +57,8 @@ def init_db():
             conn.execute('ALTER TABLE collections ADD COLUMN cover_path TEXT')
         if not _column_exists(conn, 'collections', 'aggregate_subdirs'):
             conn.execute('ALTER TABLE collections ADD COLUMN aggregate_subdirs INTEGER NOT NULL DEFAULT 0')
+        if not _column_exists(conn, 'collections', 'privacy_enabled'):
+            conn.execute('ALTER TABLE collections ADD COLUMN privacy_enabled INTEGER NOT NULL DEFAULT 0')
         conn.commit()
     finally:
         conn.close()
@@ -80,6 +83,7 @@ def row_to_collection(row: sqlite3.Row) -> dict:
         'password_hash': row['password_hash'],
         'cover_path': row['cover_path'],
         'aggregate_subdirs': bool(row['aggregate_subdirs']),
+        'privacy_enabled': bool(row['privacy_enabled']),
         'created_at': row['created_at']
     }
 
@@ -189,14 +193,15 @@ def create_collection(
     paths: list[str],
     password_hash: str | None,
     cover_path: str | None,
-    aggregate_subdirs: bool = False
+    aggregate_subdirs: bool = False,
+    privacy_enabled: bool = False
 ):
     conn = get_connection()
     try:
         conn.execute(
             '''
-            INSERT INTO collections (name, paths, password_hash, cover_path, aggregate_subdirs, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO collections (name, paths, password_hash, cover_path, aggregate_subdirs, privacy_enabled, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             ''',
             (
                 name,
@@ -204,6 +209,7 @@ def create_collection(
                 password_hash,
                 cover_path,
                 1 if aggregate_subdirs else 0,
+                1 if privacy_enabled else 0,
                 datetime.utcnow().isoformat()
             )
         )
@@ -221,7 +227,8 @@ def update_collection(
     clear_password: bool = False,
     cover_path: str | None = None,
     clear_cover: bool = False,
-    aggregate_subdirs: bool | None = None
+    aggregate_subdirs: bool | None = None,
+    privacy_enabled: bool | None = None
 ):
     conn = get_connection()
     try:
@@ -242,6 +249,9 @@ def update_collection(
         if aggregate_subdirs is not None:
             fields.append('aggregate_subdirs = ?')
             values.append(1 if aggregate_subdirs else 0)
+        if privacy_enabled is not None:
+            fields.append('privacy_enabled = ?')
+            values.append(1 if privacy_enabled else 0)
         if clear_password:
             fields.append('password_hash = NULL')
         if clear_cover:

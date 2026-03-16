@@ -47,7 +47,7 @@
       :transition-name="null"
       :mask-transition-name="null"
     >
-      <div class="flat-form modal-surface">
+      <n-form class="flat-form modal-surface" label-placement="top" :show-feedback="false">
         <n-form-item label="显示名称">
           <n-input v-model:value="newCollection.name" placeholder="请输入显示名称" />
         </n-form-item>
@@ -79,11 +79,14 @@
         <n-form-item>
           <n-checkbox v-model:checked="newCollection.aggregate_subdirs">汇总子目录</n-checkbox>
         </n-form-item>
-        <n-space justify="end">
+        <n-form-item>
+          <n-checkbox v-model:checked="newCollection.privacy_enabled">开启隐私显示</n-checkbox>
+        </n-form-item>
+        <div class="form-actions">
           <n-button @click="showCreate = false">取消</n-button>
           <n-button type="primary" @click="create">创建</n-button>
-        </n-space>
-      </div>
+        </div>
+      </n-form>
     </n-modal>
 
     <n-modal
@@ -93,7 +96,7 @@
       :transition-name="null"
       :mask-transition-name="null"
     >
-      <div class="flat-form modal-surface">
+      <n-form class="flat-form modal-surface" label-placement="top" :show-feedback="false">
         <n-form-item label="显示名称">
           <n-input v-model:value="editForm.name" placeholder="请输入显示名称" />
         </n-form-item>
@@ -131,11 +134,14 @@
         <n-form-item>
           <n-checkbox v-model:checked="editForm.clearCover">清空封面</n-checkbox>
         </n-form-item>
-        <n-space justify="end">
+        <n-form-item>
+          <n-checkbox v-model:checked="editForm.privacy_enabled">开启隐私显示</n-checkbox>
+        </n-form-item>
+        <div class="form-actions">
           <n-button @click="showEdit = false">取消</n-button>
           <n-button type="primary" @click="save">保存</n-button>
-        </n-space>
-      </div>
+        </div>
+      </n-form>
     </n-modal>
 
     <n-modal
@@ -200,6 +206,7 @@ import {
   NListItem,
   NInput,
   NModal,
+  NForm,
   NFormItem,
   NSpace,
   NPopconfirm,
@@ -239,7 +246,8 @@ const newCollection = ref({
   paths: [] as string[],
   password: '',
   cover_path: '',
-  aggregate_subdirs: false
+  aggregate_subdirs: false,
+  privacy_enabled: false
 })
 
 const editing = ref<CollectionAdmin | null>(null)
@@ -250,7 +258,8 @@ const editForm = ref({
   clearPassword: false,
   cover_path: '',
   clearCover: false,
-  aggregate_subdirs: false
+  aggregate_subdirs: false,
+  privacy_enabled: false
 })
 
 const filteredPickerFolders = computed(() => {
@@ -379,7 +388,8 @@ function openCreate() {
     paths: [],
     password: '',
     cover_path: '',
-    aggregate_subdirs: false
+    aggregate_subdirs: false,
+    privacy_enabled: false
   }
   showCreate.value = true
 }
@@ -392,7 +402,8 @@ async function create() {
       paths: newCollection.value.paths,
       password: newCollection.value.password || undefined,
       cover_path: newCollection.value.cover_path || undefined,
-      aggregate_subdirs: newCollection.value.aggregate_subdirs
+      aggregate_subdirs: newCollection.value.aggregate_subdirs,
+      privacy_enabled: newCollection.value.privacy_enabled
     })
     showCreate.value = false
     notification.success({ title: '创建成功', content: `集合 ${newCollection.value.name} 已创建` })
@@ -412,7 +423,8 @@ function openEdit(item: CollectionAdmin) {
     clearPassword: false,
     cover_path: item.cover_path || '',
     clearCover: false,
-    aggregate_subdirs: item.aggregate_subdirs
+    aggregate_subdirs: item.aggregate_subdirs,
+    privacy_enabled: item.privacy_enabled
   }
   showEdit.value = true
 }
@@ -428,7 +440,8 @@ async function save() {
       clear_password: editForm.value.clearPassword,
       cover_path: editForm.value.cover_path || undefined,
       clear_cover: editForm.value.clearCover,
-      aggregate_subdirs: editForm.value.aggregate_subdirs
+      aggregate_subdirs: editForm.value.aggregate_subdirs,
+      privacy_enabled: editForm.value.privacy_enabled
     })
     showEdit.value = false
     notification.success({ title: '更新成功', content: `已更新集合 ${editForm.value.name}` })
@@ -701,6 +714,13 @@ function onCoverError(event: Event) {
   display: grid;
   gap: 10px;
   padding: 6px 2px 2px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 2px;
 }
 
 .flat-form :deep(.n-form-item) {

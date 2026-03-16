@@ -16,6 +16,8 @@
         :archives="store.collectionListing.archives"
         :folder-thumb="folderThumb"
         :archive-thumb="archiveThumb"
+        :privacy-enabled="privacyEnabled"
+        :privacy-storage-key="privacyStorageKey"
         @open-folder="openFolder"
         @open-archive="openArchive"
       />
@@ -36,6 +38,8 @@
         v-if="store.collectionListing.images.length"
         :images="store.collectionListing.images"
         :thumb="thumb"
+        :privacy-enabled="privacyEnabled"
+        :privacy-storage-key="privacyStorageKey"
         @open-image="openImage"
       />
       <div class="load" v-if="store.collectionListing.has_more">
@@ -92,9 +96,11 @@ const collectionId = computed(() => Number(route.params.id))
 const collectionPath = computed(() => String(route.query.path || ''))
 const collectionName = ref('图集')
 const requiresPassword = ref(false)
+const privacyEnabled = ref(false)
 const showPassword = ref(false)
 const password = ref('')
 const flatMode = ref(false)
+const privacyStorageKey = computed(() => `collection-privacy-${collectionId.value}`)
 
 watch(
   () => `${String(route.params.id || '')}|${String(route.query.path || '')}|${String(route.query.view || '')}`,
@@ -109,7 +115,9 @@ async function loadCollection() {
     const info = await getCollectionInfo(collectionId.value)
     collectionName.value = info.name
     store.collectionName = info.name
+    store.collectionPrivacyEnabled = Boolean(info.privacy_enabled)
     requiresPassword.value = info.requires_password
+    privacyEnabled.value = Boolean(info.privacy_enabled)
     flatMode.value = resolveInitialView(info.aggregate_subdirs)
     const existingToken = localStorage.getItem(`collection_token_${collectionId.value}`)
     if (requiresPassword.value && !existingToken) {
@@ -162,6 +170,9 @@ function buildCollectionRoute(path: string) {
   if (flatMode.value) {
     query.view = 'flat'
   }
+  if (privacyEnabled.value) {
+    query.privacy = '1'
+  }
   return {
     path: `/collection/${collectionId.value}`,
     query
@@ -181,6 +192,9 @@ function openArchive(path: string) {
   if (collectionPath.value) {
     query.folder = collectionPath.value
   }
+  if (privacyEnabled.value) {
+    query.privacy = '1'
+  }
   router.push({
     path: '/folder',
     query
@@ -196,7 +210,8 @@ function openImage(path: string) {
       index: String(baseIndex),
       folder: collectionPath.value,
       collection: String(collectionId.value),
-      view: flatMode.value ? 'flat' : 'folder'
+      view: flatMode.value ? 'flat' : 'folder',
+      ...(privacyEnabled.value ? { privacy: '1' } : {})
     }
   })
 }

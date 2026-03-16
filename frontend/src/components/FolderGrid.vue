@@ -5,9 +5,9 @@
       :key="folder.path"
       type="button"
       class="card folder-card"
-      @click="$emit('open-folder', folder.path)"
+      @click="handleFolderClick(folder.path)"
     >
-      <div class="thumb" v-if="folderThumb">
+      <div :class="['thumb', { 'thumb--private': privacyEnabled && !isRevealed(`folder:${folder.path}`) }]" v-if="folderThumb">
         <img
           :src="folderThumb(folder.path)"
           :alt="folder.name"
@@ -15,6 +15,7 @@
           @error="onThumbError"
         />
         <div class="thumb-fallback">目录</div>
+        <div v-if="privacyEnabled && !isRevealed(`folder:${folder.path}`)" class="privacy-mask">点击显示</div>
       </div>
       <div class="icon" v-else>目录</div>
       <div class="label-area">
@@ -26,9 +27,9 @@
       :key="archive.path"
       type="button"
       class="card folder-card"
-      @click="$emit('open-archive', archive.path)"
+      @click="handleArchiveClick(archive.path)"
     >
-      <div class="thumb" v-if="archiveThumb">
+      <div :class="['thumb', { 'thumb--private': privacyEnabled && !isRevealed(`archive:${archive.path}`) }]" v-if="archiveThumb">
         <img
           :src="archiveThumb(archive.path)"
           :alt="archive.name"
@@ -36,6 +37,7 @@
           @error="onThumbError"
         />
         <div class="thumb-fallback">压缩包</div>
+        <div v-if="privacyEnabled && !isRevealed(`archive:${archive.path}`)" class="privacy-mask">点击显示</div>
       </div>
       <div class="icon" v-else>压缩包</div>
       <div class="label-area">
@@ -47,13 +49,42 @@
 
 <script setup lang="ts">
 import type { FolderItem } from '../api/client'
+import { computed } from 'vue'
+import { usePrivacyReveal } from '../composables/usePrivacyReveal'
 
-defineProps<{
+const props = defineProps<{
   folders: FolderItem[]
   archives: FolderItem[]
   folderThumb?: (path: string) => string
   archiveThumb?: (path: string) => string
+  privacyEnabled?: boolean
+  privacyStorageKey?: string
 }>()
+
+const emit = defineEmits<{
+  (event: 'open-folder', path: string): void
+  (event: 'open-archive', path: string): void
+}>()
+
+const revealStorageKey = computed(() => props.privacyStorageKey || '')
+const privacyEnabled = computed(() => Boolean(props.privacyEnabled))
+const { isRevealed, reveal } = usePrivacyReveal(revealStorageKey)
+
+function handleFolderClick(path: string) {
+  if (privacyEnabled.value && !isRevealed(`folder:${path}`)) {
+    reveal(`folder:${path}`)
+    return
+  }
+  emit('open-folder', path)
+}
+
+function handleArchiveClick(path: string) {
+  if (privacyEnabled.value && !isRevealed(`archive:${path}`)) {
+    reveal(`archive:${path}`)
+    return
+  }
+  emit('open-archive', path)
+}
 
 function onThumbError(event: Event) {
   const target = event.target as HTMLImageElement | null
@@ -132,6 +163,26 @@ function onThumbError(event: Event) {
 
 .thumb img:not(.hidden) ~ .thumb-fallback {
   opacity: 0;
+}
+
+.thumb--private img {
+  filter: blur(22px) saturate(0.7);
+  transform: scale(1.04);
+}
+
+.privacy-mask {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(20, 25, 35, 0.26);
+  backdrop-filter: blur(10px);
 }
 
 .label-area {

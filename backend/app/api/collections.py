@@ -35,6 +35,7 @@ class CollectionCreate(BaseModel):
     password: str | None = None
     cover_path: str | None = None
     aggregate_subdirs: bool = False
+    privacy_enabled: bool = False
 
 
 class CollectionUpdate(BaseModel):
@@ -45,6 +46,7 @@ class CollectionUpdate(BaseModel):
     cover_path: str | None = None
     clear_cover: bool = False
     aggregate_subdirs: bool | None = None
+    privacy_enabled: bool | None = None
 
 
 class CollectionAccess(BaseModel):
@@ -309,7 +311,8 @@ def list_collections_available(user: dict = Depends(get_current_user)):
                 'id': c['id'],
                 'name': c['name'],
                 'requires_password': bool(c.get('password_hash')),
-                'cover_path': c.get('cover_path')
+                'cover_path': c.get('cover_path'),
+                'privacy_enabled': bool(c.get('privacy_enabled'))
             }
             for c in collections
         ]
@@ -318,7 +321,8 @@ def list_collections_available(user: dict = Depends(get_current_user)):
             'id': c['id'],
             'name': c['name'],
             'requires_password': bool(c.get('password_hash')),
-            'cover_path': c.get('cover_path')
+            'cover_path': c.get('cover_path'),
+            'privacy_enabled': bool(c.get('privacy_enabled'))
         }
         for c in collections
         if _collection_accessible(c['paths'], allowed)
@@ -336,6 +340,7 @@ def list_collections_admin():
             'requires_password': bool(c.get('password_hash')),
             'cover_path': c.get('cover_path'),
             'aggregate_subdirs': bool(c.get('aggregate_subdirs')),
+            'privacy_enabled': bool(c.get('privacy_enabled')),
             'created_at': c['created_at']
         }
         for c in collections
@@ -350,7 +355,8 @@ def get_collection(collection_id: int, user: dict = Depends(get_current_user)):
         'name': collection['name'],
         'requires_password': bool(collection.get('password_hash')),
         'cover_path': collection.get('cover_path'),
-        'aggregate_subdirs': bool(collection.get('aggregate_subdirs'))
+        'aggregate_subdirs': bool(collection.get('aggregate_subdirs')),
+        'privacy_enabled': bool(collection.get('privacy_enabled'))
     }
 
 
@@ -370,7 +376,8 @@ def create_collection(payload: CollectionCreate):
         paths,
         password_hash,
         cover_path,
-        payload.aggregate_subdirs
+        payload.aggregate_subdirs,
+        payload.privacy_enabled
     )
     return {'status': 'ok'}
 
@@ -393,7 +400,8 @@ def update_collection(collection_id: int, payload: CollectionUpdate):
         clear_password=payload.clear_password,
         cover_path=cover_path,
         clear_cover=payload.clear_cover,
-        aggregate_subdirs=payload.aggregate_subdirs
+        aggregate_subdirs=payload.aggregate_subdirs,
+        privacy_enabled=payload.privacy_enabled
     )
     return {'status': 'ok'}
 

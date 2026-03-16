@@ -20,7 +20,13 @@
           <n-button size="small" @click="goBack">返回</n-button>
         </div>
       </div>
-      <ImageGrid :images="filteredFiles" :thumb="thumb" @open-image="openArchiveImage" />
+      <ImageGrid
+        :images="filteredFiles"
+        :thumb="thumb"
+        :privacy-enabled="privacyEnabled"
+        :privacy-storage-key="privacyStorageKey"
+        @open-image="openArchiveImage"
+      />
       <div class="load" v-if="listing.has_more">
         <n-button type="primary" :loading="store.loading" @click="loadMore">加载更多</n-button>
       </div>
@@ -37,7 +43,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { NButton, NInput } from 'naive-ui'
 import { useGalleryStore } from '../store/gallery'
 import ImageGrid from '../components/ImageGrid.vue'
-import { archiveThumbUrl, collectionArchiveThumbUrl } from '../api/client'
+import { archiveThumbUrl, collectionArchiveThumbUrl, getCollectionInfo } from '../api/client'
 
 const store = useGalleryStore()
 const route = useRoute()
@@ -56,6 +62,10 @@ const collectionId = computed(() => {
 
 const isCollection = computed(() => collectionId.value !== null)
 const collectionView = computed(() => String(route.query.view || 'folder'))
+const privacyEnabled = ref(route.query.privacy === '1')
+const privacyStorageKey = computed(() =>
+  isCollection.value ? `collection-privacy-${collectionId.value}` : ''
+)
 
 const listing = computed(() =>
   isCollection.value ? store.collectionArchiveListing : store.archiveListing
@@ -67,14 +77,32 @@ const archiveLabel = computed(() => {
   return parts[parts.length - 1] || archive.value
 })
 
-onMounted(() => {
+onMounted(async () => {
   if (!archive.value) return
   if (isCollection.value) {
-    store.loadCollectionArchive(collectionId.value as number, archive.value)
+    await hydrateCollectionPrivacy()
+    await store.loadCollectionArchive(collectionId.value as number, archive.value)
   } else {
-    store.loadArchive(archive.value)
+    await store.loadArchive(archive.value)
   }
 })
+
+async function hydrateCollectionPrivacy() {
+  if (!isCollection.value) {
+    privacyEnabled.value = false
+    return
+  }
+  if (route.query.privacy === '1') {
+    privacyEnabled.value = true
+    return
+  }
+  try {
+    const info = await getCollectionInfo(collectionId.value as number)
+    privacyEnabled.value = Boolean(info.privacy_enabled)
+  } catch {
+    privacyEnabled.value = false
+  }
+}
 
 const filteredFiles = computed(() => {
   if (!listing.value) return []
@@ -96,6 +124,9 @@ function openArchiveImage(file: string) {
   if (isCollection.value) {
     query.collection = String(collectionId.value)
     query.view = collectionView.value
+    if (privacyEnabled.value) {
+      query.privacy = '1'
+    }
   }
   router.push({ path: '/image', query })
 }
@@ -105,6 +136,9 @@ function goBack() {
     const query: Record<string, string> = { view: collectionView.value }
     if (folder.value) {
       query.path = folder.value
+    }
+    if (privacyEnabled.value) {
+      query.privacy = '1'
     }
     router.push({
       path: `/collection/${collectionId.value}`,

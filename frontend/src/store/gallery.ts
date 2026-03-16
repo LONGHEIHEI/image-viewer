@@ -23,6 +23,7 @@ export const useGalleryStore = defineStore('gallery', {
     treeError: '' as string,
     collectionId: null as number | null,
     collectionName: '' as string,
+    collectionPrivacyEnabled: false,
     collectionFolder: '' as string,
     collectionListing: null as FolderListing | null,
     collectionArchivePath: '' as string,

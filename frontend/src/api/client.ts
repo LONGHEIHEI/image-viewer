@@ -41,7 +41,9 @@ export type CollectionSummary = {
   id: number
   name: string
   requires_password: boolean
+  cover_path?: string | null
   aggregate_subdirs?: boolean
+  privacy_enabled?: boolean
 }
 
 export type CollectionAdmin = {
@@ -51,6 +53,7 @@ export type CollectionAdmin = {
   requires_password: boolean
   cover_path?: string | null
   aggregate_subdirs: boolean
+  privacy_enabled: boolean
   created_at: string
 }
 
@@ -200,6 +203,7 @@ export async function createCollection(payload: {
   password?: string
   cover_path?: string
   aggregate_subdirs?: boolean
+  privacy_enabled?: boolean
 }) {
   return requestJson(`${API_BASE}/collections`, {
     method: 'POST',
@@ -217,6 +221,7 @@ export async function updateCollection(
     cover_path?: string
     clear_cover?: boolean
     aggregate_subdirs?: boolean
+    privacy_enabled?: boolean
   }
 ) {
   return requestJson(`${API_BASE}/collections/${collectionId}`, {
