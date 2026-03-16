@@ -25,13 +25,24 @@
     <n-card
       v-for="archive in archives"
       :key="archive.path"
-      class="card"
+      class="card folder-card"
       :bordered="false"
-      :content-style="{ padding: '14px 16px 16px' }"
+      :content-style="{ padding: 0 }"
       @click="$emit('open-archive', archive.path)"
     >
-      <div class="icon">压缩包</div>
-      <div class="label">{{ archive.name }}</div>
+      <div class="thumb" v-if="archiveThumb">
+        <img
+          :src="archiveThumb(archive.path)"
+          :alt="archive.name"
+          loading="lazy"
+          @error="onThumbError"
+        />
+        <div class="thumb-fallback">压缩包</div>
+      </div>
+      <div class="icon" v-else>压缩包</div>
+      <div class="label-area">
+        <div class="label">{{ archive.name }}</div>
+      </div>
     </n-card>
   </div>
 </template>
@@ -44,6 +55,7 @@ defineProps<{
   folders: FolderItem[]
   archives: FolderItem[]
   folderThumb?: (path: string) => string
+  archiveThumb?: (path: string) => string
 }>()
 
 function onThumbError(event: Event) {
@@ -122,10 +134,14 @@ function onThumbError(event: Event) {
 
 .label-area {
   padding: 12px 14px 14px;
+  min-width: 0;
 }
 
 .label {
   font-weight: 700;
   font-family: 'Space Grotesk', Arial, sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>

@@ -52,7 +52,20 @@ async function submit() {
 }
 
 .card {
+  width: min(420px, 100%);
   min-width: 320px;
   border-radius: var(--radius-lg);
+}
+
+@media (max-width: 640px) {
+  .login {
+    min-height: calc(100dvh - 40px);
+    align-items: flex-start;
+    padding-top: 10vh;
+  }
+
+  .card {
+    min-width: 0;
+  }
 }
 </style>

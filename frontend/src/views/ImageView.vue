@@ -1,9 +1,8 @@
 <template>
-  <div class="page">
+  <div class="page image-page">
     <div class="page-header">
-      <div class="page-title">图片预览</div>
       <div class="page-actions">
-        <n-button size="small" @click="goBack">返回</n-button>
+        <span v-if="totalCount" class="page-meta-badge">共 {{ totalCount }} 张</span>
         <n-button size="small" :disabled="!hasPrev" @click="goPrev">上一张</n-button>
         <n-button size="small" :disabled="!hasNext" @click="goNext">下一张</n-button>
         <n-button size="small" @click="toggleFullscreen">
@@ -13,7 +12,7 @@
         <span class="zoom">{{ Math.round(scale * 100) }}%</span>
       </div>
     </div>
-    <n-card class="panel" :bordered="false">
+    <div class="viewer-shell">
       <ImageViewer
         ref="viewerRef"
         :src="src"
@@ -21,14 +20,14 @@
         @scale-change="scale = $event"
         @fullscreen-change="isFullscreen = $event"
       />
-    </n-card>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { NButton, NCard } from 'naive-ui'
+import { NButton } from 'naive-ui'
 import {
   archiveImageUrl,
   imageUrl,
@@ -64,6 +63,8 @@ const collectionId = computed(() => {
   const num = Number(raw)
   return Number.isFinite(num) ? num : null
 })
+
+const viewMode = computed(() => String(route.query.view || 'folder'))
 
 const isCollection = computed(() => collectionId.value !== null)
 
@@ -112,6 +113,14 @@ const currentIndex = computed(() => {
 
 const hasPrev = computed(() => currentIndex.value > 0)
 const hasNext = computed(() => currentIndex.value >= 0 && currentIndex.value < items.value.length - 1)
+const totalCount = computed(() => {
+  if (isCollection.value) {
+    if (archive.value) return store.collectionArchiveListing?.total_files ?? 0
+    return store.collectionListing?.total_images ?? 0
+  }
+  if (archive.value) return store.archiveListing?.total_files ?? 0
+  return store.listing?.total_images ?? 0
+})
 const hasMore = computed(() => {
   if (isCollection.value) {
     if (archive.value) return Boolean(store.collectionArchiveListing?.has_more)
@@ -138,8 +147,12 @@ function navigateTo(index: number) {
   const item = items.value[index]
   if (archive.value) {
     const query: Record<string, string> = { archive: archive.value, file: item.path, index: String(index) }
+    if (folder.value) {
+      query.folder = folder.value
+    }
     if (isCollection.value) {
       query.collection = String(collectionId.value)
+      query.view = viewMode.value
     }
     router.replace({ path: '/image', query })
   } else {
@@ -150,6 +163,7 @@ function navigateTo(index: number) {
     }
     if (isCollection.value) {
       query.collection = String(collectionId.value)
+      query.view = viewMode.value
     }
     router.replace({ path: '/image', query })
   }
@@ -183,7 +197,8 @@ async function goNext() {
         folder.value || store.collectionFolder,
         store.collectionListing.page + 1,
         store.collectionListing.page_size,
-        true
+        true,
+        viewMode.value === 'flat' ? 'flat' : 'folder'
       )
       navigateTo(currentIndex.value + 1)
     }
@@ -232,7 +247,14 @@ onMounted(async () => {
     } else if (path.value) {
       const targetFolder = folder.value || path.value.split('/').slice(0, -1).join('/')
       if (!store.collectionListing || store.collectionListing.folder !== targetFolder) {
-        await store.loadCollectionFolder(collectionId.value as number, targetFolder)
+        await store.loadCollectionFolder(
+          collectionId.value as number,
+          targetFolder,
+          1,
+          20,
+          false,
+          viewMode.value === 'flat' ? 'flat' : 'folder'
+        )
       }
     }
     return
@@ -255,6 +277,54 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.image-page {
+  min-height: calc(100dvh - 72px);
+  gap: 0;
+}
+
+.page-header {
+  margin-bottom: 14px;
+}
+
+.viewer-shell {
+  display: grid;
+  min-width: 0;
+}
+
+@media (max-width: 960px) {
+  .image-page {
+    min-height: auto;
+  }
+
+  .page-header {
+    position: fixed;
+    left: calc(10px + env(safe-area-inset-left));
+    right: calc(10px + env(safe-area-inset-right));
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    z-index: 15;
+    margin: 0;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .page-actions {
+    width: auto;
+    max-width: 100%;
+    justify-content: center;
+    padding: 8px 10px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(27, 30, 39, 0.08);
+    box-shadow: 0 14px 30px rgba(20, 25, 35, 0.14);
+    backdrop-filter: blur(16px);
+    pointer-events: auto;
+  }
+
+  .zoom {
+    display: none;
+  }
+}
+
 .zoom {
   font-size: 12px;
   color: var(--muted);

@@ -3,7 +3,6 @@
     <div class="page-header">
       <div class="page-title">用户</div>
       <div class="page-actions">
-        <n-button @click="load">刷新</n-button>
         <n-button type="primary" @click="openCreate">新增用户</n-button>
       </div>
     </div>
@@ -220,5 +219,17 @@ async function remove(userId: number) {
 
 .modal {
   width: min(520px, 92vw);
+}
+
+@media (max-width: 960px) {
+  .row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .row :deep(.n-space) {
+    width: 100%;
+    flex-wrap: wrap;
+  }
 }
 </style>

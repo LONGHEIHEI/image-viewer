@@ -1,12 +1,12 @@
-﻿services:
+services:
   app:
     build:
-      context: ..
+      context: .
       dockerfile: docker/Dockerfile.app
     volumes:
-      - ../photos:/data/photos:ro
-      - ../cache:/data/cache
-      - ../data:/app/data
+      - ./photos:/data/photos:ro
+      - ./cache:/data/cache
+      - ./data:/app/data
     environment:
       - PHOTO_ROOT=/data/photos
       - THUMB_CACHE=/data/cache

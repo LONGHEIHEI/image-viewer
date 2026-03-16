@@ -37,6 +37,13 @@ Header:
 - `PUT /api/users/{id}`
 - `DELETE /api/users/{id}`
 
+## 目录选择（管理员）
+- `GET /api/fs/roots`
+- `GET /api/fs/list?path=...`
+
+## 集合封面
+- `GET /api/collections/{id}/cover` 返回集合封面缩略图（未设置时会自动选择并固定）
+
 ## Tree
 `GET /api/tree?root=/photos&depth=3`
 
@@ -69,6 +76,11 @@ Response:
   "has_more": true
 }
 ```
+
+## 集合目录（可选汇总）
+`GET /api/collections/{id}/folder?path=...&view=flat`
+
+说明：`view=flat` 会汇总子目录图片（默认只显示当前目录）。
 
 ## List Archive
 `GET /api/archive?path=/photos/set1/pack.zip&page=1&page_size=80`

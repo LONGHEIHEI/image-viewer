@@ -2,9 +2,12 @@
 
 ## Docker Compose
 ```bash
-cd docker
 docker compose up -d --build
 ```
+
+默认启动的是单个 `app` 服务，容器内同时运行：
+- FastAPI（监听容器内 `127.0.0.1:8010`）
+- Nginx（对外暴露 `80`，统一转发 `/api` 和静态前端）
 
 ## Volumes
 - `./photos:/data/photos` (photo root)
@@ -41,4 +44,4 @@ Local setup scripts:
 - `docker compose version` returns a version
 - `docker compose up -d --build` completes without errors
 - Visit `http://localhost:8080` for the UI
-- Visit `http://localhost:8010/health` for backend health
+- Visit `http://localhost:8080/health` for backend health

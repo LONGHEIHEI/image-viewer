@@ -2,7 +2,6 @@
   <n-card class="panel sidebar" :bordered="false">
     <div class="header">
       <div class="title">目录树</div>
-      <n-button size="small" @click="$emit('refresh')">刷新</n-button>
     </div>
 
     <div v-if="loading" class="loading">正在加载目录...</div>
@@ -20,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import { NCard, NButton } from 'naive-ui'
+import { NCard } from 'naive-ui'
 import type { TreeNode as TreeNodeType } from '../api/client'
 import TreeNode from './TreeNode.vue'
 
@@ -29,7 +28,6 @@ defineProps<{ tree: TreeNodeType | null; loading: boolean; error: string }>()
 defineEmits<{
   (e: 'open-folder', path: string): void
   (e: 'open-archive', path: string): void
-  (e: 'refresh'): void
 }>()
 </script>
 
@@ -58,5 +56,17 @@ defineEmits<{
 .empty {
   font-size: 12px;
   color: var(--muted);
+}
+
+@media (max-width: 960px) {
+  .sidebar {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
 }
 </style>

@@ -1,47 +1,62 @@
 <template>
   <div class="page">
     <div class="page-header">
-      <div class="page-title">集合：{{ collectionName }}</div>
+      <div v-if="store.collectionFolder" class="title-with-crumbs">
+        <Breadcrumbs
+          class="header-crumbs"
+          :path="store.collectionFolder"
+          :root-label="collectionName"
+          compact
+          @navigate="openFolder"
+        />
+      </div>
+      <div v-else class="page-title mobile-topbar-title-hidden">{{ collectionName }}</div>
       <div class="page-actions">
+        <span v-if="store.collectionListing?.total_images" class="page-meta-badge">
+          共 {{ store.collectionListing.total_images }} 张
+        </span>
         <n-button size="small" @click="goBack">返回</n-button>
-        <n-button size="small" @click="refresh">刷新</n-button>
       </div>
     </div>
 
-    <n-card class="panel" :bordered="false">
-      <Breadcrumbs :path="store.collectionFolder" :root-label="collectionName" @navigate="openFolder" />
+    <section class="collection-section">
       <FolderGrid
         v-if="store.collectionListing"
         :folders="store.collectionListing.folders"
         :archives="store.collectionListing.archives"
         :folder-thumb="folderThumb"
+        :archive-thumb="archiveThumb"
         @open-folder="openFolder"
         @open-archive="openArchive"
       />
-    </n-card>
+    </section>
 
-    <n-card class="panel" v-if="store.collectionListing" :bordered="false">
-      <div class="panel-header">
-        <div class="panel-title">图片</div>
+    <div
+      class="collection-section image-panel"
+      v-if="
+        store.collectionListing &&
+        (
+          store.collectionListing.images.length > 0 ||
+          store.collectionListing.total_images > 0 ||
+          store.collectionListing.has_more
+        )
+      "
+    >
+      <div class="panel-header image-meta-header">
         <div class="meta" v-if="store.collectionListing.total_images">
           共 {{ store.collectionListing.total_images }} 张 · 第 {{ store.collectionListing.page }} 页
         </div>
       </div>
-      <div class="search">
-        <n-input v-model:value="searchTerm" placeholder="按名称搜索图片" clearable />
-        <span class="count">已显示 {{ filteredImages.length }} 张</span>
-      </div>
       <ImageGrid
-        v-if="filteredImages.length"
-        :images="filteredImages"
+        v-if="store.collectionListing.images.length"
+        :images="store.collectionListing.images"
         :thumb="thumb"
         @open-image="openImage"
       />
-      <div v-else class="empty">未找到图片。</div>
       <div class="load" v-if="store.collectionListing.has_more">
         <n-button type="primary" :loading="store.loading" @click="loadMore">加载更多</n-button>
       </div>
-    </n-card>
+    </div>
 
     <div v-if="store.error" class="error">{{ store.error }}</div>
     <div v-if="store.loading" class="loading">加载中...</div>
@@ -61,9 +76,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { NCard, NButton, NInput, NModal, NForm, NFormItem, NSpace, useNotification } from 'naive-ui'
+import {
+  NButton,
+  NModal,
+  NForm,
+  NFormItem,
+  NSpace,
+  useNotification
+} from 'naive-ui'
 import { useGalleryStore } from '../store/gallery'
 import FolderGrid from '../components/FolderGrid.vue'
 import ImageGrid from '../components/ImageGrid.vue'
@@ -71,6 +93,7 @@ import Breadcrumbs from '../components/Breadcrumbs.vue'
 import {
   accessCollection,
   collectionThumbUrl,
+  collectionArchiveCoverUrl,
   collectionFolderCoverUrl,
   getCollectionInfo,
   setCollectionToken
@@ -81,98 +104,194 @@ const route = useRoute()
 const router = useRouter()
 const notification = useNotification()
 
-const collectionId = Number(route.params.id)
-const collectionName = ref('集合')
+const collectionId = computed(() => Number(route.params.id))
+const collectionPath = computed(() => String(route.query.path || ''))
+const collectionName = ref('图集')
 const requiresPassword = ref(false)
 const showPassword = ref(false)
 const password = ref('')
-const searchTerm = ref('')
+const flatMode = ref(false)
 
-onMounted(async () => {
-  await loadCollection()
-})
-
-const filteredImages = computed(() => {
-  if (!store.collectionListing) return []
-  if (!searchTerm.value.trim()) return store.collectionListing.images
-  const keyword = searchTerm.value.toLowerCase()
-  return store.collectionListing.images.filter((img) => img.name.toLowerCase().includes(keyword))
-})
+watch(
+  () => `${String(route.params.id || '')}|${String(route.query.path || '')}|${String(route.query.view || '')}`,
+  async () => {
+    await loadCollection()
+  },
+  { immediate: true }
+)
 
 async function loadCollection() {
   try {
-    const info = await getCollectionInfo(collectionId)
+    const info = await getCollectionInfo(collectionId.value)
     collectionName.value = info.name
+    store.collectionName = info.name
     requiresPassword.value = info.requires_password
-    const existingToken = localStorage.getItem(`collection_token_${collectionId}`)
+    flatMode.value = resolveInitialView(info.aggregate_subdirs)
+    const existingToken = localStorage.getItem(`collection_token_${collectionId.value}`)
     if (requiresPassword.value && !existingToken) {
       showPassword.value = true
       return
     }
-    await store.loadCollectionFolder(collectionId, '')
+    await store.loadCollectionFolder(
+      collectionId.value,
+      collectionPath.value,
+      1,
+      20,
+      false,
+      flatMode.value ? 'flat' : 'folder'
+    )
   } catch (err) {
     notification.error({ title: '加载失败', content: err instanceof Error ? err.message : '加载失败' })
-    router.push('/')
+    router.push('/collections')
   }
+}
+
+function resolveInitialView(aggregateSubdirs?: boolean) {
+  if (route.query.view === 'flat') return true
+  if (route.query.view === 'folder') return false
+  return Boolean(aggregateSubdirs)
 }
 
 async function confirmPassword() {
   try {
-    const result = await accessCollection(collectionId, password.value)
-    setCollectionToken(collectionId, result.token || '')
+    const result = await accessCollection(collectionId.value, password.value)
+    setCollectionToken(collectionId.value, result.token || '')
     showPassword.value = false
-    await store.loadCollectionFolder(collectionId, '')
+    await store.loadCollectionFolder(
+      collectionId.value,
+      collectionPath.value,
+      1,
+      20,
+      false,
+      flatMode.value ? 'flat' : 'folder'
+    )
   } catch (err) {
     notification.error({ title: '密码错误', content: err instanceof Error ? err.message : '密码错误' })
   }
 }
 
-function openFolder(path: string) {
-  store.loadCollectionFolder(collectionId, path)
+function buildCollectionRoute(path: string) {
+  const query: Record<string, string> = {}
+  if (path) {
+    query.path = path
+  }
+  if (flatMode.value) {
+    query.view = 'flat'
+  }
+  return {
+    path: `/collection/${collectionId.value}`,
+    query
+  }
 }
 
-function refresh() {
-  store.loadCollectionFolder(collectionId, store.collectionFolder)
+function openFolder(path: string) {
+  router.push(buildCollectionRoute(path))
 }
 
 function openArchive(path: string) {
-  router.push({ path: '/folder', query: { archive: path, collection: String(collectionId) } })
+  const query: Record<string, string> = {
+    archive: path,
+    collection: String(collectionId.value),
+    view: flatMode.value ? 'flat' : 'folder'
+  }
+  if (collectionPath.value) {
+    query.folder = collectionPath.value
+  }
+  router.push({
+    path: '/folder',
+    query
+  })
 }
 
 function openImage(path: string) {
   const baseIndex = store.collectionListing?.images.findIndex((img) => img.path === path) ?? 0
   router.push({
     path: '/image',
-    query: { path, index: String(baseIndex), folder: store.collectionFolder, collection: String(collectionId) }
+    query: {
+      path,
+      index: String(baseIndex),
+      folder: collectionPath.value,
+      collection: String(collectionId.value),
+      view: flatMode.value ? 'flat' : 'folder'
+    }
   })
 }
 
 function loadMore() {
   if (!store.collectionListing) return
   store.loadCollectionFolder(
-    collectionId,
-    store.collectionFolder,
+    collectionId.value,
+    collectionPath.value,
     store.collectionListing.page + 1,
     store.collectionListing.page_size,
-    true
+    true,
+    flatMode.value ? 'flat' : 'folder'
   )
 }
 
 function thumb(path: string) {
-  return collectionThumbUrl(collectionId, path)
+  return collectionThumbUrl(collectionId.value, path)
 }
 
 function folderThumb(path: string) {
-  return collectionFolderCoverUrl(collectionId, path)
+  return collectionFolderCoverUrl(collectionId.value, path)
+}
+
+function archiveThumb(path: string) {
+  return collectionArchiveCoverUrl(collectionId.value, path)
 }
 
 function goBack() {
-  router.push('/')
+  router.push('/collections')
 }
 </script>
 
 <style scoped>
 .modal {
   width: min(420px, 92vw);
+}
+
+.title-with-crumbs {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.header-crumbs {
+  margin: 0;
+  min-width: 0;
+}
+
+.collection-section {
+  display: grid;
+  gap: 12px;
+}
+
+.image-panel {
+  padding-top: 6px;
+  border-top: 1px solid rgba(27, 30, 39, 0.06);
+}
+
+.image-meta-header {
+  justify-content: flex-end;
+}
+
+@media (max-width: 960px) {
+  .title-with-crumbs {
+    width: 100%;
+  }
+
+  .header-crumbs {
+    width: 100%;
+  }
+
+  .collection-section {
+    gap: 10px;
+  }
+
+  .image-panel {
+    padding-top: 4px;
+  }
 }
 </style>

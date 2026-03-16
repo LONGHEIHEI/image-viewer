@@ -3,6 +3,8 @@
 ## Overview
 The system is split into a Vue 3 frontend and a FastAPI backend. The backend indexes folders and archives under a configurable root, and the frontend consumes JSON and image streams.
 
+For Docker deployment, the production packaging is a single container: Vue static assets are built first, then served by Nginx in the same container that also runs the FastAPI backend.
+
 ## Backend Modules
 - `app/api`: HTTP endpoints (auth, users, media)
 - `app/services/db.py`: SQLite access

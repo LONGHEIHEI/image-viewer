@@ -1,4 +1,4 @@
-﻿from pathlib import Path
+from pathlib import Path
 import sqlite3
 import json
 from datetime import datetime
@@ -17,6 +17,11 @@ def get_connection():
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def _column_exists(conn: sqlite3.Connection, table: str, column: str) -> bool:
+    rows = conn.execute(f'PRAGMA table_info({table})').fetchall()
+    return any(row['name'] == column for row in rows)
 
 
 def init_db():
@@ -41,10 +46,16 @@ def init_db():
                 name TEXT UNIQUE NOT NULL,
                 paths TEXT NOT NULL DEFAULT '[]',
                 password_hash TEXT,
+                cover_path TEXT,
+                aggregate_subdirs INTEGER NOT NULL DEFAULT 0,
                 created_at TEXT NOT NULL
             )
             '''
         )
+        if not _column_exists(conn, 'collections', 'cover_path'):
+            conn.execute('ALTER TABLE collections ADD COLUMN cover_path TEXT')
+        if not _column_exists(conn, 'collections', 'aggregate_subdirs'):
+            conn.execute('ALTER TABLE collections ADD COLUMN aggregate_subdirs INTEGER NOT NULL DEFAULT 0')
         conn.commit()
     finally:
         conn.close()
@@ -67,6 +78,8 @@ def row_to_collection(row: sqlite3.Row) -> dict:
         'name': row['name'],
         'paths': json.loads(row['paths'] or '[]'),
         'password_hash': row['password_hash'],
+        'cover_path': row['cover_path'],
+        'aggregate_subdirs': bool(row['aggregate_subdirs']),
         'created_at': row['created_at']
     }
 
@@ -171,12 +184,28 @@ def get_collection_by_name(name: str):
         conn.close()
 
 
-def create_collection(name: str, paths: list[str], password_hash: str | None):
+def create_collection(
+    name: str,
+    paths: list[str],
+    password_hash: str | None,
+    cover_path: str | None,
+    aggregate_subdirs: bool = False
+):
     conn = get_connection()
     try:
         conn.execute(
-            'INSERT INTO collections (name, paths, password_hash, created_at) VALUES (?, ?, ?, ?)',
-            (name, json.dumps(paths), password_hash, datetime.utcnow().isoformat())
+            '''
+            INSERT INTO collections (name, paths, password_hash, cover_path, aggregate_subdirs, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ''',
+            (
+                name,
+                json.dumps(paths),
+                password_hash,
+                cover_path,
+                1 if aggregate_subdirs else 0,
+                datetime.utcnow().isoformat()
+            )
         )
         conn.commit()
     finally:
@@ -189,7 +218,10 @@ def update_collection(
     name: str | None = None,
     paths: list[str] | None = None,
     password_hash: str | None = None,
-    clear_password: bool = False
+    clear_password: bool = False,
+    cover_path: str | None = None,
+    clear_cover: bool = False,
+    aggregate_subdirs: bool | None = None
 ):
     conn = get_connection()
     try:
@@ -204,8 +236,16 @@ def update_collection(
         if password_hash is not None:
             fields.append('password_hash = ?')
             values.append(password_hash)
+        if cover_path is not None:
+            fields.append('cover_path = ?')
+            values.append(cover_path)
+        if aggregate_subdirs is not None:
+            fields.append('aggregate_subdirs = ?')
+            values.append(1 if aggregate_subdirs else 0)
         if clear_password:
             fields.append('password_hash = NULL')
+        if clear_cover:
+            fields.append('cover_path = NULL')
         if not fields:
             return
         values.append(collection_id)

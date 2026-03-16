@@ -22,6 +22,7 @@ export const useGalleryStore = defineStore('gallery', {
     error: '' as string,
     treeError: '' as string,
     collectionId: null as number | null,
+    collectionName: '' as string,
     collectionFolder: '' as string,
     collectionListing: null as FolderListing | null,
     collectionArchivePath: '' as string,
@@ -86,14 +87,15 @@ export const useGalleryStore = defineStore('gallery', {
       path = '',
       page = 1,
       pageSize = 20,
-      append = false
+      append = false,
+      view: 'folder' | 'flat' = 'folder'
     ) {
       this.loading = true
       this.error = ''
       try {
         this.collectionId = collectionId
         this.collectionFolder = path
-        const data = await getCollectionFolder(collectionId, path, page, pageSize)
+        const data = await getCollectionFolder(collectionId, path, page, pageSize, view)
         if (append && this.collectionListing && this.collectionListing.folder === data.folder) {
           this.collectionListing = {
             ...data,

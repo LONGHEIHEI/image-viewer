@@ -123,6 +123,29 @@ def list_archive(archive_path: str, root: str, page: int = 1, page_size: int = 2
     }
 
 
+def get_archive_cover_file(archive_path: str) -> str | None:
+    path = Path(archive_path)
+    if not path.exists() or not path.is_file():
+        raise FileNotFoundError(f'Archive not found: {archive_path}')
+
+    archive_type = _archive_type(path)
+    if archive_type == 'zip':
+        names = _list_zip(path)
+    elif archive_type == '7z':
+        names = _list_7z(path)
+    else:
+        names = _list_rar(path)
+
+    image_names = [
+        name for name in names
+        if Path(name).suffix.lower() in IMAGE_EXTS
+    ]
+    if not image_names:
+        return None
+    image_names.sort(key=lambda item: item.lower())
+    return image_names[0]
+
+
 def stream_archive_image(archive_path: str, file_path: str):
     path = Path(archive_path)
     if not path.exists() or not path.is_file():

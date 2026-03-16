@@ -1,6 +1,6 @@
-# Image Views 写真浏览器
+# 轻图
 
-一个轻量、文件夹优先的写真浏览器，支持 PWA 与 ZIP/7Z/RAR 直读。前端使用 Vue 3 + Naive UI，后端使用 FastAPI。
+一个轻量、文件夹优先的图片浏览器，支持 PWA 与 ZIP/7Z/RAR 直读。前端使用 Vue 3 + Naive UI，后端使用 FastAPI。
 
 ## 功能
 - 按原始文件夹结构浏览
@@ -33,7 +33,7 @@ photos/
 ```powershell
 cd backend
 python -m venv .venv
-. .venv\Scripts\activate
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 
 # 可选：不配置也能启动（会使用默认路径）
@@ -41,7 +41,7 @@ $env:PHOTO_ROOT="C:\Users\LSW\Desktop\项目\image-views\photos"
 $env:THUMB_CACHE="C:\Users\LSW\Desktop\项目\image-views\cache"
 $env:THUMB_SIZE="320"
 
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8010
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8010 --reload
 ```
 
 验证：
@@ -56,6 +56,8 @@ npm run dev
 
 访问：
 - `http://localhost:5173`
+- 浏览器里模拟 PWA 外壳可直接访问 `http://localhost:5173/?pwa=1`
+- 关闭这类模拟可访问 `http://localhost:5173/?pwa=0`，或直接新开一个标签页
 
 ### 4. 登录
 默认管理员账号：
@@ -78,6 +80,9 @@ export THUMB_SIZE=320
 
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8010
 ```
+
+- 以上 `.venv/bin/activate` 仅适用于 macOS/Linux 的 `bash`/`zsh`
+- Windows PowerShell 请使用 `.\.venv\Scripts\Activate.ps1`
 
 ```bash
 cd frontend
@@ -106,13 +111,17 @@ pip install -r requirements-full.txt
 
 ## Docker 部署
 ```bash
-cd docker
 docker compose up -d --build
 ```
 
 访问：
 - 前端：`http://localhost:8080`
-- 后端健康检查：`http://localhost:8010/health`
+- 健康检查：`http://localhost:8080/health`
+
+说明：
+- 现在 Docker 默认是单个 `app` 容器，内部同时运行 FastAPI 和 Nginx
+- 不需要再分别启动前后端两个容器
+- 如果你仍想从 `docker/` 目录执行，也可以继续使用 `docker/docker-compose.yml`
 
 ## 中文乱码处理（重点）
 1. **源文件保存为 UTF-8**（推荐 UTF-8 无 BOM）

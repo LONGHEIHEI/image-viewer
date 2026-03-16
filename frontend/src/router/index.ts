@@ -1,23 +1,23 @@
-﻿import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import LibraryView from '../views/LibraryView.vue'
 import FolderView from '../views/FolderView.vue'
 import ImageView from '../views/ImageView.vue'
 import LoginView from '../views/LoginView.vue'
-import UsersView from '../views/UsersView.vue'
 import CollectionView from '../views/CollectionView.vue'
-import CollectionsManageView from '../views/CollectionsManageView.vue'
+import CollectionsView from '../views/CollectionsView.vue'
+import SettingsView from '../views/SettingsView.vue'
 import { useAuthStore } from '../store/auth'
 
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/login', component: LoginView },
-    { path: '/', component: LibraryView, meta: { requiresAuth: true } },
-    { path: '/folder', component: FolderView, meta: { requiresAuth: true } },
-    { path: '/image', component: ImageView, meta: { requiresAuth: true } },
-    { path: '/collection/:id', component: CollectionView, meta: { requiresAuth: true } },
-    { path: '/users', component: UsersView, meta: { requiresAuth: true, requiresAdmin: true } },
-    { path: '/collections', component: CollectionsManageView, meta: { requiresAuth: true, requiresAdmin: true } }
+    { path: '/', component: LibraryView, meta: { requiresAuth: true, topLevel: true } },
+    { path: '/folder', component: FolderView, meta: { requiresAuth: true, topLevel: false } },
+    { path: '/image', component: ImageView, meta: { requiresAuth: true, topLevel: false } },
+    { path: '/collections', component: CollectionsView, meta: { requiresAuth: true, topLevel: true } },
+    { path: '/collection/:id', component: CollectionView, meta: { requiresAuth: true, topLevel: false } },
+    { path: '/settings', component: SettingsView, meta: { requiresAuth: true, requiresAdmin: true, topLevel: true } }
   ]
 })
 

@@ -9,9 +9,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/icon-192.png', 'icons/icon-512.png'],
       manifest: {
-        name: 'Image Views',
-        short_name: 'ImageViews',
-        description: 'Photo browser with archive support',
+        name: '轻图',
+        short_name: '轻图',
+        description: '轻量图片浏览器（支持压缩包）',
         theme_color: '#1b1f2a',
         background_color: '#0f1117',
         display: 'standalone',

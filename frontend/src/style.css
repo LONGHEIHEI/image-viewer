@@ -24,11 +24,17 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  min-height: 100%;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
   background: var(--bg);
   color: var(--ink);
+  overflow-x: hidden;
 }
 
 a {
@@ -47,7 +53,10 @@ button {
 .page-container {
   max-width: none;
   margin: 0;
-  padding: 12px 18px 28px;
+  padding:
+    12px calc(18px + env(safe-area-inset-right))
+    calc(28px + env(safe-area-inset-bottom))
+    calc(18px + env(safe-area-inset-left));
 }
 
 .page {
@@ -60,24 +69,46 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .page-title {
   font-size: 22px;
   font-weight: 700;
   font-family: 'Space Grotesk', Arial, sans-serif;
+  line-height: 1.15;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .page-actions {
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.page-meta-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(27, 30, 39, 0.05);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .panel {
   border-radius: var(--radius-xl);
   border: 1px solid var(--stroke);
   box-shadow: var(--shadow-soft);
+  min-width: 0;
 }
 
 .panel-header {
@@ -86,12 +117,17 @@ button {
   justify-content: space-between;
   margin-bottom: 12px;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .panel-title {
   font-size: 18px;
   font-family: 'Space Grotesk', Arial, sans-serif;
   font-weight: 700;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .meta {
@@ -149,6 +185,55 @@ button {
 
 @media (max-width: 960px) {
   .page-container {
-    padding: 18px 16px 32px;
+    padding:
+      14px calc(14px + env(safe-area-inset-right))
+      calc(26px + env(safe-area-inset-bottom))
+      calc(14px + env(safe-area-inset-left));
+  }
+
+  .page {
+    gap: 14px;
+  }
+
+  .page-title {
+    font-size: 20px;
+  }
+
+  .page-actions {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 6px;
+  }
+
+  .page-meta-badge {
+    min-height: 28px;
+    padding: 0 9px;
+    font-size: 11px;
+  }
+
+  .panel {
+    border-radius: 14px;
+  }
+
+  .panel-header {
+    margin-bottom: 10px;
+  }
+
+  .meta {
+    font-size: 11px;
+  }
+
+  .mobile-topbar-title-hidden {
+    display: none !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-title {
+    font-size: 18px;
+  }
+
+  .page-actions {
+    gap: 8px;
   }
 }

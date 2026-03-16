@@ -129,18 +129,28 @@ defineExpose({
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .stage {
-  background: #fff;
+  background: transparent;
   padding: 0;
   border-radius: 0;
-  box-shadow: var(--shadow);
+  box-shadow: none;
   max-width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
   touch-action: none;
   cursor: grab;
+}
+
+.stage:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  padding: 24px;
+  background: rgba(12, 14, 20, 0.96);
 }
 
 .stage.dragging {
@@ -156,12 +166,16 @@ defineExpose({
 }
 
 .caption {
-  font-size: 14px;
-  color: var(--muted);
+  font-size: 13px;
+  color: rgba(92, 102, 114, 0.88);
+  max-width: min(100%, 78vw);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .hints {
-  font-size: 12px;
-  color: var(--muted);
+  font-size: 11px;
+  color: rgba(92, 102, 114, 0.68);
 }
 </style>

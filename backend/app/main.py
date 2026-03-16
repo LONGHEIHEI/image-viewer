@@ -7,7 +7,7 @@ from app.services.auth import ensure_admin_user
 
 settings = Settings()
 
-app = FastAPI(title='Image Views API')
+app = FastAPI(title='轻图 API')
 app.include_router(api_router, prefix='/api')
 
 @app.on_event('startup')

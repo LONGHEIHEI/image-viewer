@@ -5,11 +5,27 @@ __pycache__/
 *.pyo
 .Python
 *.egg-info/
+__pypackages__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pytype/
+.pyre/
+.coverage
+coverage.xml
+htmlcov/
 .venv/
 venv/
 ENV/
+Python/
 .env
 .env.*
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
 
 # Node / Frontend
 node_modules/
@@ -17,6 +33,9 @@ dist/
 .vite/
 .pnpm-store/
 .turbo/
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -31,6 +50,9 @@ photos/
 # OS
 .DS_Store
 Thumbs.db
+*.swp
+*.swo
+*~
 
 # IDE
 .idea/

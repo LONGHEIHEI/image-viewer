@@ -4,7 +4,12 @@ import random
 from pathlib import Path
 from app.config import Settings
 from app.services.fs_indexer import list_folder, build_tree, IMAGE_EXTS
-from app.services.archive_reader import list_archive, stream_archive_image, ArchiveSupportError
+from app.services.archive_reader import (
+    list_archive,
+    stream_archive_image,
+    get_archive_cover_file,
+    ArchiveSupportError
+)
 from app.services.thumbnailer import get_thumbnail, get_archive_thumbnail
 from app.services.deps import get_current_user
 from app.utils.path import resolve_under_root, rel_from_abs, is_within_allowed, is_within_or_ancestor, normalize_rel
@@ -102,6 +107,26 @@ def _random_image_in_folder(abs_path: str) -> str | None:
     return str(random.choice(candidates))
 
 
+def _find_first_image_in_tree(folder: Path, max_depth: int = 2) -> str | None:
+    if max_depth < 0:
+        return None
+    try:
+        entries = sorted(folder.iterdir(), key=lambda p: p.name.lower())
+    except PermissionError:
+        return None
+    for entry in entries:
+        if entry.is_file() and entry.suffix.lower() in IMAGE_EXTS:
+            return str(entry)
+    if max_depth == 0:
+        return None
+    for entry in entries:
+        if entry.is_dir():
+            found = _find_first_image_in_tree(entry, max_depth - 1)
+            if found:
+                return found
+    return None
+
+
 @router.get('/tree')
 def get_tree(
     root: str = Query(default=''),
@@ -140,6 +165,8 @@ def get_folder_cover(path: str, user: dict = Depends(get_current_user)):
         image_path = _random_image_in_folder(base)
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail='目录不存在，请检查路径')
+    if not image_path:
+        image_path = _find_first_image_in_tree(Path(base), max_depth=2)
     if not image_path:
         raise HTTPException(status_code=404, detail='目录内没有图片')
     thumb_path = get_thumbnail(image_path, settings.thumb_cache, settings.thumb_size)
@@ -207,6 +234,25 @@ def get_archive_thumb(path: str, file: str, user: dict = Depends(get_current_use
         raise HTTPException(status_code=403, detail='无权限访问')
     try:
         thumb_path = get_archive_thumbnail(archive_path, file, settings.thumb_cache, settings.thumb_size)
+    except ArchiveSupportError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail='压缩包内未找到图片')
+    return FileResponse(thumb_path)
+
+
+@router.get('/archive/cover')
+def get_archive_cover(path: str, user: dict = Depends(get_current_user)):
+    allowed = require_allowed_paths(user)
+    archive_path = safe_resolve(path)
+    rel_path = rel_from_abs(archive_path, settings.photo_root)
+    if not is_within_allowed(rel_path, allowed):
+        raise HTTPException(status_code=403, detail='无权限访问')
+    try:
+        cover_file = get_archive_cover_file(archive_path)
+        if not cover_file:
+            raise HTTPException(status_code=404, detail='压缩包内未找到图片')
+        thumb_path = get_archive_thumbnail(archive_path, cover_file, settings.thumb_cache, settings.thumb_size)
     except ArchiveSupportError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except FileNotFoundError:

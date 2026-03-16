@@ -41,6 +41,7 @@ export type CollectionSummary = {
   id: number
   name: string
   requires_password: boolean
+  aggregate_subdirs?: boolean
 }
 
 export type CollectionAdmin = {
@@ -48,7 +49,20 @@ export type CollectionAdmin = {
   name: string
   paths: string[]
   requires_password: boolean
+  cover_path?: string | null
+  aggregate_subdirs: boolean
   created_at: string
+}
+
+export type FsRoot = {
+  name: string
+  path: string
+}
+
+export type FsList = {
+  path: string
+  parent: string
+  folders: FolderItem[]
 }
 
 const API_BASE = '/api'
@@ -167,11 +181,26 @@ export async function getCollectionsAdmin(): Promise<CollectionAdmin[]> {
   return requestJson(`${API_BASE}/collections`)
 }
 
+export async function getFsRoots(): Promise<FsRoot[]> {
+  const data = await requestJson(`${API_BASE}/fs/roots`)
+  return data.roots || []
+}
+
+export async function listFs(path: string): Promise<FsList> {
+  return requestJson(`${API_BASE}/fs/list?path=${encodeURIComponent(path)}`)
+}
+
 export async function getCollectionInfo(collectionId: number): Promise<CollectionSummary> {
   return requestJson(`${API_BASE}/collections/${collectionId}`)
 }
 
-export async function createCollection(payload: { name: string; paths: string[]; password?: string }) {
+export async function createCollection(payload: {
+  name: string
+  paths: string[]
+  password?: string
+  cover_path?: string
+  aggregate_subdirs?: boolean
+}) {
   return requestJson(`${API_BASE}/collections`, {
     method: 'POST',
     body: JSON.stringify(payload)
@@ -180,7 +209,15 @@ export async function createCollection(payload: { name: string; paths: string[];
 
 export async function updateCollection(
   collectionId: number,
-  payload: { name?: string; paths?: string[]; password?: string; clear_password?: boolean }
+  payload: {
+    name?: string
+    paths?: string[]
+    password?: string
+    clear_password?: boolean
+    cover_path?: string
+    clear_cover?: boolean
+    aggregate_subdirs?: boolean
+  }
 ) {
   return requestJson(`${API_BASE}/collections/${collectionId}`, {
     method: 'PUT',
@@ -205,9 +242,11 @@ export async function getCollectionFolder(
   collectionId: number,
   path = '',
   page = 1,
-  pageSize = 60
+  pageSize = 60,
+  view: 'folder' | 'flat' = 'folder'
 ): Promise<FolderListing> {
-  const url = `${API_BASE}/collections/${collectionId}/folder?path=${encodeURIComponent(path)}&page=${page}&page_size=${pageSize}${collectionTokenQuery(collectionId)}`
+  const viewQuery = view === 'flat' ? '&view=flat' : ''
+  const url = `${API_BASE}/collections/${collectionId}/folder?path=${encodeURIComponent(path)}&page=${page}&page_size=${pageSize}${viewQuery}${collectionTokenQuery(collectionId)}`
   return requestJson(url)
 }
 
@@ -218,6 +257,11 @@ export async function getCollectionArchive(
   pageSize = 80
 ): Promise<ArchiveListing> {
   const url = `${API_BASE}/collections/${collectionId}/archive?path=${encodeURIComponent(path)}&page=${page}&page_size=${pageSize}${collectionTokenQuery(collectionId)}`
+  return requestJson(url)
+}
+
+export async function getCollectionTree(collectionId: number, depth = 2): Promise<TreeNode> {
+  const url = `${API_BASE}/collections/${collectionId}/tree?depth=${depth}${collectionTokenQuery(collectionId)}`
   return requestJson(url)
 }
 
@@ -245,6 +289,10 @@ export function archiveThumbUrl(archive: string, file: string): string {
   return `${API_BASE}/archive/thumb?path=${encodeURIComponent(archive)}&file=${encodeURIComponent(file)}${tokenQuery()}`
 }
 
+export function archiveCoverUrl(archive: string): string {
+  return `${API_BASE}/archive/cover?path=${encodeURIComponent(archive)}${tokenQuery()}`
+}
+
 export function collectionImageUrl(collectionId: number, path: string): string {
   return `${API_BASE}/collections/${collectionId}/image?path=${encodeURIComponent(path)}${collectionTokenQuery(collectionId)}${tokenQuery()}`
 }
@@ -259,4 +307,16 @@ export function collectionThumbUrl(collectionId: number, path: string): string {
 
 export function collectionArchiveThumbUrl(collectionId: number, archive: string, file: string): string {
   return `${API_BASE}/collections/${collectionId}/archive/thumb?path=${encodeURIComponent(archive)}&file=${encodeURIComponent(file)}${collectionTokenQuery(collectionId)}${tokenQuery()}`
+}
+
+export function collectionArchiveCoverUrl(collectionId: number, archive: string): string {
+  return `${API_BASE}/collections/${collectionId}/archive/cover?path=${encodeURIComponent(archive)}${collectionTokenQuery(collectionId)}${tokenQuery()}`
+}
+
+export function collectionCoverUrl(collectionId: number | string): string {
+  const token = getToken()
+  if (token) {
+    return `${API_BASE}/collections/${collectionId}/cover?token=${encodeURIComponent(token)}`
+  }
+  return `${API_BASE}/collections/${collectionId}/cover`
 }

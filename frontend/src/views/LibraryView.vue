@@ -4,19 +4,18 @@
       <div class="page-title">图库</div>
     </div>
 
-    <n-layout has-sider class="layout">
-      <n-layout-sider width="280" class="left" collapse-mode="width" :collapsed-width="0">
+    <div class="layout">
+      <section class="left">
         <SidebarTree
           :tree="store.tree"
           :loading="store.treeLoading"
           :error="store.treeError"
           @open-folder="openFolder"
           @open-archive="openArchive"
-          @refresh="refreshTree"
         />
-      </n-layout-sider>
+      </section>
 
-      <n-layout-content class="main">
+      <div class="main">
         <n-card class="panel" :bordered="false">
           <div class="panel-header">
             <div class="panel-left">
@@ -28,13 +27,13 @@
                 @navigate="openFolder"
               />
             </div>
-            <n-button size="small" @click="refresh">刷新</n-button>
           </div>
           <FolderGrid
             v-if="store.listing"
             :folders="store.listing.folders"
             :archives="store.listing.archives"
             :folder-thumb="folderThumb"
+            :archive-thumb="archiveThumb"
             @open-folder="openFolder"
             @open-archive="openArchive"
           />
@@ -59,44 +58,52 @@
 
         <div v-if="store.error" class="error">{{ store.error }}</div>
         <div v-if="store.loading" class="loading">加载中...</div>
-      </n-layout-content>
-    </n-layout>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { NLayout, NLayoutSider, NLayoutContent, NCard, NButton } from 'naive-ui'
+import { onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { NCard, NButton } from 'naive-ui'
 import { useGalleryStore } from '../store/gallery'
 import FolderGrid from '../components/FolderGrid.vue'
 import ImageGrid from '../components/ImageGrid.vue'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import SidebarTree from '../components/SidebarTree.vue'
-import { folderCoverUrl, thumbUrl } from '../api/client'
+import { folderCoverUrl, archiveCoverUrl, thumbUrl } from '../api/client'
 
 const store = useGalleryStore()
+const route = useRoute()
 const router = useRouter()
 
 onMounted(() => {
-  store.loadFolder('')
   store.loadTree(3)
 })
 
+watch(
+  () => String(route.query.path || ''),
+  (path) => {
+    store.loadFolder(path)
+  },
+  { immediate: true }
+)
+
 function openFolder(path: string) {
-  store.loadFolder(path)
-}
-
-function refresh() {
-  store.loadFolder(store.currentFolder)
-}
-
-function refreshTree() {
-  store.loadTree(3)
+  router.push({
+    path: '/',
+    query: path ? { path } : {}
+  })
 }
 
 function openArchive(path: string) {
-  router.push({ path: '/folder', query: { archive: path } })
+  const query: Record<string, string> = { archive: path }
+  const currentPath = String(route.query.path || '')
+  if (currentPath) {
+    query.folder = currentPath
+  }
+  router.push({ path: '/folder', query })
 }
 
 function openImage(path: string) {
@@ -117,24 +124,28 @@ function thumb(path: string) {
 function folderThumb(path: string) {
   return folderCoverUrl(path)
 }
+
+function archiveThumb(path: string) {
+  return archiveCoverUrl(path)
+}
 </script>
 
 <style scoped>
 .layout {
-  background: transparent;
+  display: grid;
+  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
   gap: 12px;
-  align-items: flex-start;
+  align-items: start;
 }
 
 .left {
-  background: transparent;
-  padding-right: 4px;
+  min-width: 0;
 }
 
 .main {
-  background: transparent;
   display: grid;
   gap: 16px;
+  min-width: 0;
 }
 
 .panel-left {
@@ -150,11 +161,21 @@ function folderThumb(path: string) {
 
 @media (max-width: 960px) {
   .layout {
-    display: block;
+    grid-template-columns: 1fr;
+    gap: 14px;
   }
 
   .left {
-    padding-right: 0;
+    order: 1;
+  }
+
+  .panel-left {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .panel-crumbs {
+    width: 100%;
   }
 }
 </style>
