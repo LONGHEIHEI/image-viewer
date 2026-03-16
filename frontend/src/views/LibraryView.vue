@@ -16,7 +16,7 @@
       </section>
 
       <div class="main">
-        <n-card class="panel" :bordered="false">
+        <section class="browser-section">
           <div class="panel-header">
             <div class="panel-left">
               <div class="panel-title">目录</div>
@@ -37,12 +37,11 @@
             @open-folder="openFolder"
             @open-archive="openArchive"
           />
-        </n-card>
+        </section>
 
-        <n-card
+        <section
           v-if="store.listing && store.listing.total_images"
-          class="panel"
-          :bordered="false"
+          class="browser-section"
         >
           <div class="panel-header">
             <div class="panel-title">图片</div>
@@ -54,7 +53,7 @@
           <div class="load" v-if="store.listing.has_more">
             <n-button type="primary" :loading="store.loading" @click="loadMore">加载更多</n-button>
           </div>
-        </n-card>
+        </section>
 
         <div v-if="store.error" class="error">{{ store.error }}</div>
         <div v-if="store.loading" class="loading">加载中...</div>
@@ -66,7 +65,7 @@
 <script setup lang="ts">
 import { onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { NCard, NButton } from 'naive-ui'
+import { NButton } from 'naive-ui'
 import { useGalleryStore } from '../store/gallery'
 import FolderGrid from '../components/FolderGrid.vue'
 import ImageGrid from '../components/ImageGrid.vue'
@@ -146,6 +145,11 @@ function archiveThumb(path: string) {
   display: grid;
   gap: 16px;
   min-width: 0;
+}
+
+.browser-section {
+  display: grid;
+  gap: 12px;
 }
 
 .panel-left {

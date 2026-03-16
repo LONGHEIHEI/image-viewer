@@ -1,11 +1,10 @@
 <template>
   <div class="grid">
-    <n-card
+    <button
       v-for="folder in folders"
       :key="folder.path"
+      type="button"
       class="card folder-card"
-      :bordered="false"
-      :content-style="{ padding: 0 }"
       @click="$emit('open-folder', folder.path)"
     >
       <div class="thumb" v-if="folderThumb">
@@ -21,13 +20,12 @@
       <div class="label-area">
         <div class="label">{{ folder.name }}</div>
       </div>
-    </n-card>
-    <n-card
+    </button>
+    <button
       v-for="archive in archives"
       :key="archive.path"
+      type="button"
       class="card folder-card"
-      :bordered="false"
-      :content-style="{ padding: 0 }"
       @click="$emit('open-archive', archive.path)"
     >
       <div class="thumb" v-if="archiveThumb">
@@ -43,12 +41,11 @@
       <div class="label-area">
         <div class="label">{{ archive.name }}</div>
       </div>
-    </n-card>
+    </button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { NCard } from 'naive-ui'
 import type { FolderItem } from '../api/client'
 
 defineProps<{
@@ -73,11 +70,16 @@ function onThumbError(event: Event) {
 }
 
 .card {
+  appearance: none;
+  width: 100%;
+  padding: 0;
   cursor: pointer;
   border-radius: 16px;
   border: 1px solid var(--stroke);
-  box-shadow: var(--shadow-soft);
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: 0 6px 16px rgba(20, 25, 35, 0.04);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
+  text-align: left;
 }
 
 .folder-card {
@@ -85,8 +87,8 @@ function onThumbError(event: Event) {
 }
 
 .card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 16px 26px rgba(20, 25, 35, 0.12);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(20, 25, 35, 0.08);
 }
 
 .icon {

@@ -39,8 +39,8 @@
               <div class="mobile-page-title">{{ currentMobileTitle }}</div>
             </div>
           </div>
-          <div class="topbar-meta" v-if="showTopbarCollectionCount">
-            {{ topbarCollectionCount }}
+          <div class="topbar-meta" v-if="showTopbarMediaCount">
+            {{ topbarMediaCount }}
           </div>
           <div class="user" v-else-if="showMobileUser">
             <div class="name">{{ auth.user.username }}</div>
@@ -71,8 +71,8 @@
           </template>
         </n-button>
 
-        <div v-if="showFloatingCollectionCount" class="immersive-meta-badge">
-          {{ topbarCollectionCount }}
+        <div v-if="showFloatingMediaCount" class="immersive-meta-badge">
+          {{ topbarMediaCount }}
         </div>
 
         <n-layout has-sider class="app-shell">
@@ -95,7 +95,16 @@
             </div>
           </n-layout-sider>
           <n-layout-content class="app-content">
-            <div :class="['page-container', { 'page-container--image': isImageRoute, 'page-container--collection': isCollectionRoute }]">
+            <div
+              :class="[
+                'page-container',
+                {
+                  'page-container--with-topbar': showMobileTopbar,
+                  'page-container--image': isImageRoute,
+                  'page-container--collection': isCollectionRoute
+                }
+              ]"
+            >
               <router-view />
             </div>
           </n-layout-content>
@@ -163,22 +172,31 @@ const showMenu = computed(() => {
 
 const isImageRoute = computed(() => route.path === '/image')
 const isCollectionRoute = computed(() => route.path.startsWith('/collection/'))
+const isArchiveRoute = computed(() => route.path === '/folder' && Boolean(route.query.archive))
 const showMobileTopbar = computed(() => showMenu.value && isMobile.value && !isStandalonePwa.value)
-const showTopbarBackButton = computed(() => isImageRoute.value || isCollectionRoute.value)
-const showFloatingBackButton = computed(() => showMenu.value && isMobile.value && isStandalonePwa.value && (isImageRoute.value || isCollectionRoute.value))
-const showFloatingMenuButton = computed(() => showMenu.value && isMobile.value && isStandalonePwa.value && !isImageRoute.value && !isCollectionRoute.value)
+const showTopbarBackButton = computed(() => isImageRoute.value || isCollectionRoute.value || isArchiveRoute.value)
+const showFloatingBackButton = computed(() => showMenu.value && isMobile.value && isStandalonePwa.value && (isImageRoute.value || isCollectionRoute.value || isArchiveRoute.value))
+const showFloatingMenuButton = computed(() => showMenu.value && isMobile.value && isStandalonePwa.value && !isImageRoute.value && !isCollectionRoute.value && !isArchiveRoute.value)
 const showFloatingNavButton = computed(() => showFloatingBackButton.value || showFloatingMenuButton.value)
 const showSider = computed(() => showMenu.value && !isMobile.value)
 const drawerWidth = computed(() => (isMobile.value ? 288 : 260))
 const showBrandHeader = computed(() => route.meta.topLevel !== false)
 const showMobileUser = computed(() => showBrandHeader.value && Boolean(auth.user))
-const topbarCollectionCount = computed(() => {
+const topbarMediaCount = computed(() => {
+  if (isArchiveRoute.value) {
+    if (route.query.collection) {
+      const total = Number(gallery.collectionArchiveListing?.total_files || 0)
+      return total > 0 ? `共 ${total} 张` : ''
+    }
+    const total = Number(gallery.archiveListing?.total_files || 0)
+    return total > 0 ? `共 ${total} 张` : ''
+  }
   if (!isCollectionRoute.value) return ''
   const total = Number(gallery.collectionListing?.total_images || 0)
   return total > 0 ? `共 ${total} 张` : ''
 })
-const showTopbarCollectionCount = computed(() => showMobileTopbar.value && Boolean(topbarCollectionCount.value))
-const showFloatingCollectionCount = computed(() => showMenu.value && isMobile.value && isStandalonePwa.value && Boolean(topbarCollectionCount.value))
+const showTopbarMediaCount = computed(() => showMobileTopbar.value && Boolean(topbarMediaCount.value))
+const showFloatingMediaCount = computed(() => showMenu.value && isMobile.value && isStandalonePwa.value && Boolean(topbarMediaCount.value))
 
 function basename(value: string) {
   const parts = value.split(/[\\/]+/).filter(Boolean)
@@ -366,8 +384,10 @@ onBeforeUnmount(() => {
 }
 
 .app-topbar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 10;
   display: flex;
   align-items: center;
@@ -428,14 +448,13 @@ onBeforeUnmount(() => {
 .topbar-meta {
   display: inline-flex;
   align-items: center;
-  min-height: 32px;
-  padding: 0 10px;
-  border-radius: 999px;
-  background: rgba(27, 30, 39, 0.05);
-  color: var(--muted);
+  min-height: 26px;
+  padding: 0 2px;
+  color: rgba(92, 102, 114, 0.82);
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
+  letter-spacing: 0.01em;
 }
 
 .app-shell {
@@ -449,6 +468,10 @@ onBeforeUnmount(() => {
 
 .app-content {
   min-width: 0;
+}
+
+.page-container--with-topbar {
+  padding-top: calc(76px + env(safe-area-inset-top));
 }
 
 .page-container--image {
@@ -569,6 +592,11 @@ onBeforeUnmount(() => {
 @media (max-width: 960px) {
   .app-topbar {
     gap: 10px;
+    padding:
+      calc(6px + env(safe-area-inset-top))
+      calc(14px + env(safe-area-inset-right))
+      8px
+      calc(14px + env(safe-area-inset-left));
   }
 
   .app-topbar--image {
@@ -611,6 +639,14 @@ onBeforeUnmount(() => {
       0 calc(10px + env(safe-area-inset-right))
       calc(108px + env(safe-area-inset-bottom))
       calc(10px + env(safe-area-inset-left));
+  }
+
+  .page-container--with-topbar.page-container--image {
+    padding-top: calc(66px + env(safe-area-inset-top));
+  }
+
+  .page-container--with-topbar.page-container--collection {
+    padding-top: calc(64px + env(safe-area-inset-top));
   }
 
   .page-container--collection {

@@ -7,8 +7,8 @@
       </div>
     </div>
 
-    <n-card class="panel" :bordered="false">
-      <n-list bordered>
+    <section class="admin-section">
+      <n-list :bordered="false" class="user-list">
         <n-list-item v-for="user in users" :key="user.id">
           <div class="row">
             <div>
@@ -31,7 +31,7 @@
       </n-list>
 
       <div v-if="error" class="error">{{ error }}</div>
-    </n-card>
+    </section>
 
     <n-modal v-model:show="showCreate" preset="card" title="新增用户" class="modal">
       <n-form>
@@ -81,7 +81,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import {
-  NCard,
   NButton,
   NList,
   NListItem,
@@ -211,6 +210,20 @@ async function remove(userId: number) {
   align-items: center;
   gap: 12px;
   width: 100%;
+}
+
+.admin-section {
+  display: grid;
+  gap: 12px;
+}
+
+.user-list {
+  border-top: 1px solid rgba(27, 30, 39, 0.08);
+}
+
+.user-list :deep(.n-list-item) {
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(27, 30, 39, 0.08);
 }
 
 .name {

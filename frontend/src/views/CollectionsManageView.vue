@@ -7,7 +7,7 @@
       </div>
     </div>
 
-    <n-card class="panel" :bordered="false">
+    <section class="admin-section">
       <div class="collections-grid">
         <div v-for="item in collections" :key="item.id" class="collection-card">
           <div class="cover">
@@ -38,7 +38,7 @@
       <div v-if="!collections.length" class="empty">暂无集合</div>
 
       <div v-if="error" class="error">{{ error }}</div>
-    </n-card>
+    </section>
 
     <n-modal
       v-model:show="showCreate"
@@ -195,7 +195,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import {
-  NCard,
   NButton,
   NList,
   NListItem,
@@ -468,6 +467,11 @@ function onCoverError(event: Event) {
   width: 100%;
 }
 
+.admin-section {
+  display: grid;
+  gap: 12px;
+}
+
 .cover {
   width: 100%;
   aspect-ratio: 16 / 9;
@@ -526,17 +530,17 @@ function onCoverError(event: Event) {
 .collection-card {
   display: grid;
   gap: 10px;
-  padding: 12px;
+  padding: 10px;
   border: 1px solid rgba(27, 30, 39, 0.08);
   border-radius: 14px;
-  background: #fff;
-  box-shadow: 0 10px 24px rgba(20, 25, 35, 0.08);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 6px 16px rgba(20, 25, 35, 0.04);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 .collection-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 16px 30px rgba(20, 25, 35, 0.12);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(20, 25, 35, 0.08);
 }
 
 .card-body {

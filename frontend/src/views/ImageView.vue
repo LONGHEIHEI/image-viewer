@@ -2,7 +2,11 @@
   <div class="page image-page">
     <div class="page-header">
       <div class="page-actions">
-        <span v-if="positionLabel" class="page-meta-badge">{{ positionLabel }}</span>
+        <span v-if="showPositionBadge" class="viewer-position-badge">
+          <span class="viewer-position-current">{{ currentPosition }}</span>
+          <span class="viewer-position-divider">/</span>
+          <span class="viewer-position-total">{{ totalCount }}</span>
+        </span>
         <n-button size="small" :disabled="!hasPrev" @click="goPrev">上一张</n-button>
         <n-button size="small" :disabled="!hasNext" @click="goNext">下一张</n-button>
         <n-button size="small" @click="toggleFullscreen">
@@ -128,10 +132,7 @@ const currentPosition = computed(() => {
   }
   return 0
 })
-const positionLabel = computed(() => {
-  if (!totalCount.value || !currentPosition.value) return ''
-  return `${currentPosition.value}/${totalCount.value}`
-})
+const showPositionBadge = computed(() => totalCount.value > 0 && currentPosition.value > 0)
 const hasMore = computed(() => {
   if (isCollection.value) {
     if (archive.value) return Boolean(store.collectionArchiveListing?.has_more)
@@ -303,6 +304,36 @@ onUnmounted(() => {
   padding-top: 6px;
 }
 
+.viewer-position-badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  min-height: 28px;
+  padding: 0 2px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.viewer-position-current {
+  font-family: 'Space Grotesk', Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: rgba(27, 30, 39, 0.88);
+  letter-spacing: 0.01em;
+}
+
+.viewer-position-divider {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(92, 102, 114, 0.46);
+}
+
+.viewer-position-total {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(92, 102, 114, 0.78);
+}
+
 @media (max-width: 960px) {
   .image-page {
     min-height: auto;
@@ -330,6 +361,15 @@ onUnmounted(() => {
     box-shadow: 0 14px 30px rgba(20, 25, 35, 0.14);
     backdrop-filter: blur(16px);
     pointer-events: auto;
+  }
+
+  .viewer-position-badge {
+    min-height: 26px;
+    padding: 0;
+  }
+
+  .viewer-position-current {
+    font-size: 14px;
   }
 
   .zoom {

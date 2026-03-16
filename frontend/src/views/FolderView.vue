@@ -1,7 +1,7 @@
 <template>
   <div class="page">
-    <div v-if="listing" class="panel panel-tight">
-      <div class="panel-header browser-header">
+    <section v-if="listing" class="archive-browser">
+      <div class="panel-header browser-header browser-header--mobile-hidden">
         <div class="browser-main">
           <div class="panel-left" v-if="archiveLabel">
             <div class="panel-subtitle mobile-topbar-title-hidden">{{ archiveLabel }}</div>
@@ -24,7 +24,7 @@
       <div class="load" v-if="listing.has_more">
         <n-button type="primary" :loading="store.loading" @click="loadMore">加载更多</n-button>
       </div>
-    </div>
+    </section>
 
     <div v-if="store.error" class="error">{{ store.error }}</div>
     <div v-if="store.loading" class="loading">加载中...</div>
@@ -142,8 +142,9 @@ function thumb(filePath: string) {
 </script>
 
 <style scoped>
-.panel-tight {
-  padding: 16px 20px 20px;
+.archive-browser {
+  display: grid;
+  gap: 12px;
 }
 
 .browser-header {
@@ -198,8 +199,8 @@ function thumb(filePath: string) {
 }
 
 @media (max-width: 960px) {
-  .panel-tight {
-    padding: 14px 16px 16px;
+  .browser-header--mobile-hidden {
+    display: none;
   }
 
   .browser-header,
