@@ -63,13 +63,14 @@ function onCoverError(event: Event) {
 .collection-card {
   display: grid;
   gap: 10px;
-  padding: 10px;
+  padding: 0 0 10px;
   border: 1px solid rgba(27, 30, 39, 0.08);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.72);
   box-shadow: 0 6px 16px rgba(20, 25, 35, 0.04);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
   cursor: pointer;
+  overflow: hidden;
 }
 
 .collection-card:hover {
@@ -80,7 +81,6 @@ function onCoverError(event: Event) {
 .cover {
   width: 100%;
   aspect-ratio: 16 / 9;
-  border-radius: 12px;
   overflow: hidden;
   position: relative;
   background: #f7f7f7;
@@ -136,6 +136,7 @@ function onCoverError(event: Event) {
 }
 
 .title {
+  padding: 0 10px;
   font-weight: 700;
   font-size: 14px;
   white-space: nowrap;
@@ -150,7 +151,7 @@ function onCoverError(event: Event) {
   }
 
   .collection-card {
-    padding: 10px;
+    padding: 0 0 10px;
   }
 }
 

@@ -64,6 +64,10 @@ button {
   gap: 18px;
 }
 
+.page-container--with-topbar > .page > .page-header {
+  display: none;
+}
+
 .page-header {
   display: flex;
   align-items: center;

@@ -31,19 +31,17 @@
                 </svg>
               </template>
             </n-button>
-            <div v-if="showBrandHeader" class="brand">
-              <div class="logo">IV</div>
-              <div class="title">轻图</div>
-            </div>
-            <div v-else-if="currentMobileTitle" class="mobile-page-heading">
+            <div v-if="currentMobileTitle" class="mobile-page-heading">
               <div class="mobile-page-title">{{ currentMobileTitle }}</div>
             </div>
           </div>
-          <div class="topbar-meta" v-if="showTopbarMediaCount">
-            {{ topbarMediaCount }}
-          </div>
-          <div class="user" v-else-if="showMobileUser">
-            <div class="name">{{ auth.user.username }}</div>
+          <div class="topbar-right">
+            <div class="topbar-meta" v-if="showTopbarMediaCount">
+              {{ topbarMediaCount }}
+            </div>
+            <div v-else-if="showBrandHeader" class="brand brand--topbar">
+              <div class="logo">IV</div>
+            </div>
           </div>
         </div>
 
@@ -111,7 +109,13 @@
         </n-layout>
 
         <n-drawer v-model:show="drawerActive" placement="left" :width="drawerWidth">
-          <n-drawer-content title="菜单">
+          <n-drawer-content>
+            <template #header>
+              <div class="drawer-header-brand">
+                <div class="logo">IV</div>
+                <div class="title">轻图</div>
+              </div>
+            </template>
             <div class="drawer-inner">
               <n-menu
                 :options="menuOptions"
@@ -181,7 +185,6 @@ const showFloatingNavButton = computed(() => showFloatingBackButton.value || sho
 const showSider = computed(() => showMenu.value && !isMobile.value)
 const drawerWidth = computed(() => (isMobile.value ? 288 : 260))
 const showBrandHeader = computed(() => route.meta.topLevel !== false)
-const showMobileUser = computed(() => showBrandHeader.value && Boolean(auth.user))
 const topbarMediaCount = computed(() => {
   if (isArchiveRoute.value) {
     if (route.query.collection) {
@@ -261,10 +264,7 @@ function renderMenuIcon(type: 'library' | 'collections' | 'settings') {
 }
 
 const menuOptions = computed(() => {
-  const base = [
-    { label: '图库', key: '/', icon: renderMenuIcon('library') },
-    { label: '图集', key: '/collections', icon: renderMenuIcon('collections') }
-  ]
+  const base = [{ label: '图集', key: '/collections', icon: renderMenuIcon('collections') }]
   if (auth.user?.is_admin) {
     base.push({ label: '设置', key: '/settings', icon: renderMenuIcon('settings') })
   }
@@ -273,8 +273,7 @@ const menuOptions = computed(() => {
 
 const activeMenu = computed(() => {
   if (route.path.startsWith('/settings')) return '/settings'
-  if (route.path.startsWith('/collections') || route.path.startsWith('/collection')) return '/collections'
-  return '/'
+  return '/collections'
 })
 
 function handleMenu(key: string) {
@@ -445,6 +444,14 @@ onBeforeUnmount(() => {
   gap: 12px;
 }
 
+.topbar-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+  margin-left: auto;
+}
+
 .topbar-meta {
   display: inline-flex;
   align-items: center;
@@ -526,10 +533,20 @@ onBeforeUnmount(() => {
   min-height: calc(100dvh - 96px);
 }
 
+.drawer-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .brand {
   display: flex;
   gap: 14px;
   align-items: center;
+}
+
+.brand--topbar {
+  justify-content: flex-end;
 }
 
 .mobile-page-heading {
@@ -651,6 +668,31 @@ onBeforeUnmount(() => {
 
   .page-container--collection {
     padding-top: 2px;
+  }
+}
+
+@media (min-width: 961px) {
+  .app-shell,
+  .app-content,
+  .page-container {
+    min-height: 100dvh;
+    width: 100%;
+  }
+
+  .app-content {
+    display: flex;
+    flex: 1 1 auto;
+  }
+
+  .app-content :deep(.n-layout-scroll-container) {
+    display: flex;
+    flex: 1 1 auto;
+    width: 100%;
+    min-height: 100dvh;
+  }
+
+  .page-container {
+    flex: 1 1 auto;
   }
 }
 </style>

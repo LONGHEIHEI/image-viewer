@@ -12,7 +12,8 @@ export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/login', component: LoginView },
-    { path: '/', component: LibraryView, meta: { requiresAuth: true, topLevel: true } },
+    { path: '/', redirect: '/collections' },
+    { path: '/library', component: LibraryView, meta: { requiresAuth: true, topLevel: true } },
     { path: '/folder', component: FolderView, meta: { requiresAuth: true, topLevel: false } },
     { path: '/image', component: ImageView, meta: { requiresAuth: true, topLevel: false } },
     { path: '/collections', component: CollectionsView, meta: { requiresAuth: true, topLevel: true } },
@@ -32,7 +33,7 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.requiresAdmin && !auth.user?.is_admin) {
-    return { path: '/' }
+    return { path: '/collections' }
   }
 
   return true
