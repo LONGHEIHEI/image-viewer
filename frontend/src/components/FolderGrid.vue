@@ -1,5 +1,5 @@
 <template>
-  <div class="grid">
+  <div class="grid" :style="gridStyle">
     <button
       v-for="folder in folders"
       :key="folder.path"
@@ -15,7 +15,7 @@
           @error="onThumbError"
         />
         <div class="thumb-fallback">目录</div>
-        <div v-if="privacyEnabled && !isRevealed(`folder:${folder.path}`)" class="privacy-mask">点击显示</div>
+        <div v-if="privacyEnabled && !isRevealed(`folder:${folder.path}`)" class="privacy-mask"></div>
       </div>
       <div class="icon" v-else>目录</div>
       <div class="label-area">
@@ -37,7 +37,7 @@
           @error="onThumbError"
         />
         <div class="thumb-fallback">压缩包</div>
-        <div v-if="privacyEnabled && !isRevealed(`archive:${archive.path}`)" class="privacy-mask">点击显示</div>
+        <div v-if="privacyEnabled && !isRevealed(`archive:${archive.path}`)" class="privacy-mask"></div>
       </div>
       <div class="icon" v-else>压缩包</div>
       <div class="label-area">
@@ -59,6 +59,7 @@ const props = defineProps<{
   archiveThumb?: (path: string) => string
   privacyEnabled?: boolean
   privacyStorageKey?: string
+  cardMinWidth?: number
 }>()
 
 const emit = defineEmits<{
@@ -69,6 +70,9 @@ const emit = defineEmits<{
 const revealStorageKey = computed(() => props.privacyStorageKey || '')
 const privacyEnabled = computed(() => Boolean(props.privacyEnabled))
 const { isRevealed, reveal } = usePrivacyReveal(revealStorageKey)
+const gridStyle = computed(() => ({
+  '--folder-card-min-width': `${Math.max(160, props.cardMinWidth ?? 210)}px`
+}))
 
 function handleFolderClick(path: string) {
   if (privacyEnabled.value && !isRevealed(`folder:${path}`)) {
@@ -96,7 +100,7 @@ function onThumbError(event: Event) {
 <style scoped>
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(var(--folder-card-min-width, 210px), 1fr));
   gap: 14px;
 }
 
@@ -107,10 +111,13 @@ function onThumbError(event: Event) {
   cursor: pointer;
   border-radius: 16px;
   border: 1px solid var(--stroke);
-  background: rgba(255, 255, 255, 0.76);
-  box-shadow: 0 6px 16px rgba(20, 25, 35, 0.04);
+  background: var(--panel);
+  box-shadow: var(--shadow-tiny);
+  backdrop-filter: blur(14px);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
   text-align: left;
+  content-visibility: auto;
+  contain-intrinsic-size: 240px 210px;
 }
 
 .folder-card {
@@ -119,7 +126,7 @@ function onThumbError(event: Event) {
 
 .card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 22px rgba(20, 25, 35, 0.08);
+  box-shadow: var(--shadow-soft);
 }
 
 .icon {

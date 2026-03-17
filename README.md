@@ -115,8 +115,8 @@ docker compose up -d --build
 ```
 
 访问：
-- 前端：`http://localhost:8080`
-- 健康检查：`http://localhost:8080/health`
+- 前端：`http://localhost:8480`
+- 健康检查：`http://localhost:8480/health`
 
 说明：
 - 现在 Docker 默认是单个 `app` 容器，内部同时运行 FastAPI 和 Nginx

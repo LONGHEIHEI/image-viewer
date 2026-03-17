@@ -43,5 +43,5 @@ Local setup scripts:
 - `docker --version` returns a version
 - `docker compose version` returns a version
 - `docker compose up -d --build` completes without errors
-- Visit `http://localhost:8080` for the UI
-- Visit `http://localhost:8080/health` for backend health
+- Visit `http://localhost:8480` for the UI
+- Visit `http://localhost:8480/health` for backend health

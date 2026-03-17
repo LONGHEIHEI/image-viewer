@@ -1,6 +1,13 @@
 <template>
   <div class="page">
     <section v-if="listing" class="archive-browser">
+      <div v-if="showPrivacyToggleButton" class="privacy-toolbar">
+        <PrivacyRevealButton
+          :title="privacyToggleTitle"
+          :active="allCurrentRevealed"
+          @click="toggleCurrentArchivePrivacy"
+        />
+      </div>
       <div class="panel-header browser-header browser-header--mobile-hidden">
         <div class="browser-main">
           <div class="panel-left" v-if="archiveLabel">
@@ -38,11 +45,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { NButton, NInput } from 'naive-ui'
 import { useGalleryStore } from '../store/gallery'
 import ImageGrid from '../components/ImageGrid.vue'
+import PrivacyRevealButton from '../components/PrivacyRevealButton.vue'
+import { usePrivacyReveal } from '../composables/usePrivacyReveal'
 import { archiveThumbUrl, collectionArchiveThumbUrl, getCollectionInfo } from '../api/client'
 
 const store = useGalleryStore()
@@ -66,9 +75,48 @@ const privacyEnabled = ref(route.query.privacy === '1')
 const privacyStorageKey = computed(() =>
   isCollection.value ? `collection-privacy-${collectionId.value}` : ''
 )
+const { isRevealed, revealMany, hideMany, reset } = usePrivacyReveal(privacyStorageKey)
+// Same semantics as CollectionView: once user taps "show current folder",
+// keep revealing newly appended items until they hide again. Reset on archive change.
+const autoRevealCurrentArchive = ref(false)
 
 const listing = computed(() =>
   isCollection.value ? store.collectionArchiveListing : store.archiveListing
+)
+const currentPrivacyKeys = computed(() => {
+  if (!listing.value || !privacyEnabled.value) {
+    return [] as string[]
+  }
+  return listing.value.files.map((file) => `image:${file.path}`)
+})
+
+watch(
+  () => `${archive.value}|${folder.value}|${String(route.query.collection || '')}|${String(route.query.view || '')}|${String(route.query.privacy || '')}`,
+  () => {
+    autoRevealCurrentArchive.value = false
+    reset()
+  }
+)
+
+watch(
+  () => currentPrivacyKeys.value.length,
+  () => {
+    if (!autoRevealCurrentArchive.value) return
+    revealMany(currentPrivacyKeys.value)
+  }
+)
+
+const showPrivacyToggleButton = computed(() =>
+  privacyEnabled.value && currentPrivacyKeys.value.length > 0
+)
+
+const allCurrentRevealed = computed(() =>
+  currentPrivacyKeys.value.length > 0 &&
+  currentPrivacyKeys.value.every((key) => isRevealed(key))
+)
+
+const privacyToggleTitle = computed(() =>
+  allCurrentRevealed.value ? '隐藏当前文件夹' : '显示当前文件夹'
 )
 
 const archiveLabel = computed(() => {
@@ -81,6 +129,10 @@ onMounted(async () => {
   if (!archive.value) return
   if (isCollection.value) {
     await hydrateCollectionPrivacy()
+    if (privacyEnabled.value) {
+      // Entering a privacy-enabled archive view should always start masked.
+      reset()
+    }
     await store.loadCollectionArchive(collectionId.value as number, archive.value)
   } else {
     await store.loadArchive(archive.value)
@@ -167,6 +219,16 @@ function loadMore() {
   store.loadArchive(archive.value, listing.value.page + 1, listing.value.page_size, true)
 }
 
+function toggleCurrentArchivePrivacy() {
+  if (allCurrentRevealed.value) {
+    autoRevealCurrentArchive.value = false
+    hideMany(currentPrivacyKeys.value)
+    return
+  }
+  autoRevealCurrentArchive.value = true
+  revealMany(currentPrivacyKeys.value)
+}
+
 function thumb(filePath: string) {
   if (isCollection.value) {
     return collectionArchiveThumbUrl(collectionId.value as number, archive.value, filePath)
@@ -179,6 +241,13 @@ function thumb(filePath: string) {
 .archive-browser {
   display: grid;
   gap: 12px;
+}
+
+.privacy-toolbar {
+  position: fixed;
+  right: calc(20px + env(safe-area-inset-right));
+  bottom: calc(22px + env(safe-area-inset-bottom));
+  z-index: 40;
 }
 
 .browser-header {
@@ -251,6 +320,11 @@ function thumb(filePath: string) {
   .panel-search {
     width: 100%;
     max-width: none;
+  }
+
+  .privacy-toolbar {
+    right: calc(14px + env(safe-area-inset-right));
+    bottom: calc(16px + env(safe-area-inset-bottom));
   }
 }
 </style>

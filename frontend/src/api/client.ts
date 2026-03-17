@@ -35,6 +35,7 @@ export type UserInfo = {
   username: string
   is_admin: boolean
   allowed_paths: string[]
+  created_at?: string
 }
 
 export type CollectionSummary = {

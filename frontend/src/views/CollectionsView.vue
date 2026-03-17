@@ -20,7 +20,7 @@
           />
           <div class="cover-fallback">图集封面</div>
           <div class="cover-sheen"></div>
-          <div v-if="item.privacy_enabled && !isRevealed(`cover:${item.id}`)" class="privacy-mask">点击显示</div>
+          <div v-if="item.privacy_enabled && !isRevealed(`cover:${item.id}`)" class="privacy-mask"></div>
           <div v-if="item.requires_password" class="cover-tag">需密码</div>
           <div v-if="item.privacy_enabled" class="cover-tag cover-tag--secondary">隐私</div>
         </div>
@@ -68,26 +68,29 @@ function onCoverError(event: Event) {
 <style scoped>
 .collections-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
 }
 
 .collection-card {
   display: grid;
   gap: 10px;
   padding: 0 0 10px;
-  border: 1px solid rgba(27, 30, 39, 0.08);
+  border: 1px solid var(--stroke);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.72);
-  box-shadow: 0 6px 16px rgba(20, 25, 35, 0.04);
+  background: var(--panel);
+  box-shadow: var(--shadow-tiny);
+  backdrop-filter: blur(14px);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
   cursor: pointer;
   overflow: hidden;
+  content-visibility: auto;
+  contain-intrinsic-size: 260px 200px;
 }
 
 .collection-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 22px rgba(20, 25, 35, 0.08);
+  box-shadow: var(--shadow-soft);
 }
 
 .cover {
@@ -173,9 +176,9 @@ function onCoverError(event: Event) {
 }
 
 .title {
-  padding: 0 10px;
+  padding: 0 12px;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 15px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

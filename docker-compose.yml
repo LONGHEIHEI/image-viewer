@@ -12,5 +12,5 @@ services:
       - THUMB_CACHE=/data/cache
       - THUMB_SIZE=320
     ports:
-      - "8080:80"
+      - "8480:80"
     restart: unless-stopped

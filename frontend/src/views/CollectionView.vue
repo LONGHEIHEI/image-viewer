@@ -9,6 +9,14 @@
       </div>
     </div>
 
+    <div v-if="showPrivacyToggleButton" class="privacy-toolbar">
+      <PrivacyRevealButton
+        :title="privacyToggleTitle"
+        :active="allCurrentRevealed"
+        @click="toggleCurrentFolderPrivacy"
+      />
+    </div>
+
     <section class="collection-section">
       <FolderGrid
         v-if="store.collectionListing"
@@ -16,6 +24,7 @@
         :archives="store.collectionListing.archives"
         :folder-thumb="folderThumb"
         :archive-thumb="archiveThumb"
+        :card-min-width="260"
         :privacy-enabled="privacyEnabled"
         :privacy-storage-key="privacyStorageKey"
         @open-folder="openFolder"
@@ -69,6 +78,7 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   NButton,
+  NInput,
   NModal,
   NForm,
   NFormItem,
@@ -78,6 +88,8 @@ import {
 import { useGalleryStore } from '../store/gallery'
 import FolderGrid from '../components/FolderGrid.vue'
 import ImageGrid from '../components/ImageGrid.vue'
+import PrivacyRevealButton from '../components/PrivacyRevealButton.vue'
+import { usePrivacyReveal } from '../composables/usePrivacyReveal'
 import {
   accessCollection,
   collectionThumbUrl,
@@ -101,13 +113,53 @@ const showPassword = ref(false)
 const password = ref('')
 const flatMode = ref(false)
 const privacyStorageKey = computed(() => `collection-privacy-${collectionId.value}`)
+const { isRevealed, revealMany, hideMany, reset } = usePrivacyReveal(privacyStorageKey)
+// When user taps "show current folder", we keep auto-revealing newly appended items
+// (e.g. via "load more") until they explicitly hide again. Reset on folder/view change.
+const autoRevealCurrentFolder = ref(false)
+
+const currentPrivacyKeys = computed(() => {
+  const listing = store.collectionListing
+  if (!listing || !privacyEnabled.value) {
+    return [] as string[]
+  }
+  return [
+    ...listing.folders.map((folder) => `folder:${folder.path}`),
+    ...listing.archives.map((archive) => `archive:${archive.path}`),
+    ...listing.images.map((image) => `image:${image.path}`)
+  ]
+})
+
+const showPrivacyToggleButton = computed(() =>
+  privacyEnabled.value && currentPrivacyKeys.value.length > 0
+)
+
+const allCurrentRevealed = computed(() =>
+  currentPrivacyKeys.value.length > 0 &&
+  currentPrivacyKeys.value.every((key) => isRevealed(key))
+)
+
+const privacyToggleTitle = computed(() =>
+  allCurrentRevealed.value ? '隐藏当前文件夹' : '显示当前文件夹'
+)
 
 watch(
-  () => `${String(route.params.id || '')}|${String(route.query.path || '')}|${String(route.query.view || '')}`,
+  () => `${String(route.params.id || '')}|${String(route.query.path || '')}|${String(route.query.view || '')}|${String(route.query.privacy || '')}`,
   async () => {
+    autoRevealCurrentFolder.value = false
+    reset()
     await loadCollection()
   },
   { immediate: true }
+)
+
+watch(
+  () => currentPrivacyKeys.value.length,
+  () => {
+    if (!autoRevealCurrentFolder.value) return
+    // Idempotent: revealMany returns false when nothing changed.
+    revealMany(currentPrivacyKeys.value)
+  }
 )
 
 async function loadCollection() {
@@ -118,6 +170,11 @@ async function loadCollection() {
     store.collectionPrivacyEnabled = Boolean(info.privacy_enabled)
     requiresPassword.value = info.requires_password
     privacyEnabled.value = Boolean(info.privacy_enabled)
+    if (privacyEnabled.value) {
+      // Entering a privacy-enabled collection should always start masked,
+      // regardless of the previous reveal state in this session.
+      reset()
+    }
     flatMode.value = resolveInitialView(info.aggregate_subdirs)
     const existingToken = localStorage.getItem(`collection_token_${collectionId.value}`)
     if (requiresPassword.value && !existingToken) {
@@ -228,6 +285,16 @@ function loadMore() {
   )
 }
 
+function toggleCurrentFolderPrivacy() {
+  if (allCurrentRevealed.value) {
+    autoRevealCurrentFolder.value = false
+    hideMany(currentPrivacyKeys.value)
+    return
+  }
+  autoRevealCurrentFolder.value = true
+  revealMany(currentPrivacyKeys.value)
+}
+
 function thumb(path: string) {
   return collectionThumbUrl(collectionId.value, path)
 }
@@ -259,6 +326,13 @@ function goBack() {
   gap: 12px;
 }
 
+.privacy-toolbar {
+  position: fixed;
+  right: calc(20px + env(safe-area-inset-right));
+  bottom: calc(22px + env(safe-area-inset-bottom));
+  z-index: 40;
+}
+
 .image-panel {
   padding-top: 0;
 }
@@ -274,6 +348,11 @@ function goBack() {
 
   .collection-section {
     gap: 10px;
+  }
+
+  .privacy-toolbar {
+    right: calc(14px + env(safe-area-inset-right));
+    bottom: calc(16px + env(safe-area-inset-bottom));
   }
 
   .image-panel {

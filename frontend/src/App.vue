@@ -1,5 +1,5 @@
 <template>
-  <n-config-provider :locale="zhCN" :date-locale="dateZhCN">
+  <n-config-provider :locale="zhCN" :date-locale="dateZhCN" :theme-overrides="themeOverrides">
     <n-notification-provider placement="top-right">
       <n-layout class="app">
         <div v-if="showMobileTopbar" :class="['app-topbar', { 'app-topbar--image': isImageRoute }]">
@@ -92,7 +92,7 @@
               </div>
             </div>
           </n-layout-sider>
-          <n-layout-content class="app-content">
+          <n-layout-content :class="['app-content', { 'app-content--album': isAlbumBrowseRoute }]">
             <div
               :class="[
                 'page-container',
@@ -169,6 +169,36 @@ const simulatedStandalonePwa = ref(false)
 let menuMedia: MediaQueryList | null = null
 let standaloneMedia: MediaQueryList | null = null
 
+const themeOverrides = {
+  common: {
+    primaryColor: '#ff6a3d',
+    primaryColorHover: '#ff7b54',
+    primaryColorPressed: '#f85b2a',
+    primaryColorSuppl: '#ff6a3d',
+    borderRadius: '12px',
+    fontFamily: "'Archivo', Arial, sans-serif",
+    fontFamilyMono: "'Space Grotesk', 'Archivo', Arial, sans-serif"
+  },
+  Button: {
+    borderRadiusSmall: '10px',
+    borderRadiusMedium: '12px',
+    borderRadiusLarge: '14px'
+  },
+  Input: {
+    borderRadius: '12px'
+  },
+  Card: {
+    borderRadius: '16px'
+  },
+  Drawer: {
+    color: 'rgba(255, 255, 255, 0.92)'
+  },
+  Layout: {
+    color: 'transparent',
+    siderColor: 'rgba(255, 255, 255, 0.92)'
+  }
+} as const
+
 const showMenu = computed(() => {
   if (route.path === '/login') return false
   return Boolean(auth.user)
@@ -177,6 +207,9 @@ const showMenu = computed(() => {
 const isImageRoute = computed(() => route.path === '/image')
 const isCollectionRoute = computed(() => route.path.startsWith('/collection/'))
 const isArchiveRoute = computed(() => route.path === '/folder' && Boolean(route.query.archive))
+const isAlbumBrowseRoute = computed(
+  () => isCollectionRoute.value || (route.path === '/folder' && Boolean(route.query.collection))
+)
 const showMobileTopbar = computed(() => showMenu.value && isMobile.value && !isStandalonePwa.value)
 const showTopbarBackButton = computed(() => isImageRoute.value || isCollectionRoute.value || isArchiveRoute.value)
 const showFloatingBackButton = computed(() => showMenu.value && isMobile.value && isStandalonePwa.value && (isImageRoute.value || isCollectionRoute.value || isArchiveRoute.value))
@@ -379,7 +412,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .app {
   min-height: 100dvh;
-  background: var(--bg);
+  background: transparent;
 }
 
 .app-topbar {
@@ -396,8 +429,9 @@ onBeforeUnmount(() => {
     calc(16px + env(safe-area-inset-right))
     10px
     calc(16px + env(safe-area-inset-left));
-  background: var(--bg);
+  background: var(--panel-strong);
   border-bottom: 1px solid var(--stroke);
+  backdrop-filter: blur(18px);
 }
 
 .app-topbar--image {
@@ -469,7 +503,7 @@ onBeforeUnmount(() => {
 }
 
 .app-sider {
-  background: #fff;
+  background: var(--panel-strong);
   border-right: 1px solid var(--stroke);
 }
 
@@ -486,7 +520,7 @@ onBeforeUnmount(() => {
 }
 
 .page-container--collection {
-  padding-top: 6px;
+  padding-top: 2px;
 }
 
 .sider-inner {
@@ -667,7 +701,7 @@ onBeforeUnmount(() => {
   }
 
   .page-container--collection {
-    padding-top: 2px;
+    padding-top: 0;
   }
 }
 
@@ -694,5 +728,17 @@ onBeforeUnmount(() => {
   .page-container {
     flex: 1 1 auto;
   }
+}
+
+/* Album pages: prefer document scroll (avoid nested scrolling regions). */
+.app-content--album {
+  overflow: visible;
+}
+
+.app-content--album :deep(.n-layout-scroll-container) {
+  overflow: visible !important;
+  height: auto !important;
+  min-height: 0 !important;
+  display: block;
 }
 </style>

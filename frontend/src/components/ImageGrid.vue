@@ -17,8 +17,14 @@
           :class="['thumb', { 'thumb--private': privacyEnabled && !isRevealed(`image:${image.path}`) }]"
           :data-title="image.name"
         >
-          <img :src="thumb(image.path)" :alt="image.name" loading="lazy" @load="handleImageLoad($event, image.path)" />
-          <div v-if="privacyEnabled && !isRevealed(`image:${image.path}`)" class="privacy-mask">点击显示</div>
+          <img
+            :src="thumb(image.path)"
+            :alt="image.name"
+            loading="lazy"
+            decoding="async"
+            @load="handleImageLoad($event, image.path)"
+          />
+          <div v-if="privacyEnabled && !isRevealed(`image:${image.path}`)" class="privacy-mask"></div>
         </div>
       </div>
     </div>
@@ -75,12 +81,18 @@ const propsVisible = ref(false)
 const columnCount = ref(2)
 const masonryColumns = ref<FolderItem[][]>([])
 const columnRefs = ref<HTMLElement[]>([])
-const imageHeights = ref<Record<string, number>>({})
+// Height sampling is only used for future distribution estimates; it doesn't need to be reactive.
+const imageHeights = new Map<string, number>()
+let heightSum = 0
+let heightCount = 0
 const revealStorageKey = computed(() => props.privacyStorageKey || '')
 const privacyEnabled = computed(() => Boolean(props.privacyEnabled))
 const { isRevealed, reveal } = usePrivacyReveal(revealStorageKey)
 
 const menuOptions = [{ label: '属性', key: 'props' }]
+let renderedFirstPath = ''
+let renderedLastPath = ''
+let renderedCount = 0
 
 function getColumnCount() {
   if (typeof window === 'undefined') return 2
@@ -90,13 +102,12 @@ function getColumnCount() {
 }
 
 function getAverageImageHeight() {
-  const heights = Object.values(imageHeights.value)
-  if (!heights.length) return 220
-  return heights.reduce((sum, value) => sum + value, 0) / heights.length
+  if (!heightCount) return 220
+  return heightSum / heightCount
 }
 
 function estimateImageHeight(image: FolderItem) {
-  return imageHeights.value[image.path] ?? getAverageImageHeight()
+  return imageHeights.get(image.path) ?? getAverageImageHeight()
 }
 
 function readColumnHeights() {
@@ -147,10 +158,14 @@ function handleImageLoad(event: Event, path: string) {
   const renderedHeight =
     image.clientHeight ||
     (image.naturalWidth ? renderedWidth * (image.naturalHeight / image.naturalWidth) : renderedWidth)
-  imageHeights.value = {
-    ...imageHeights.value,
-    [path]: renderedHeight
+  const previous = imageHeights.get(path)
+  if (previous !== undefined) {
+    heightSum -= previous
+  } else {
+    heightCount += 1
   }
+  imageHeights.set(path, renderedHeight)
+  heightSum += renderedHeight
 }
 
 function handleTileClick(path: string) {
@@ -164,24 +179,29 @@ function handleTileClick(path: string) {
 watch(
   () => props.images,
   async (images) => {
-    const previous = masonryColumns.value.flat()
     const isAppend =
-      previous.length > 0 &&
-      images.length > previous.length &&
-      previous.every((item, index) => item.path === images[index]?.path)
+      renderedCount > 0 &&
+      images.length > renderedCount &&
+      images[0]?.path === renderedFirstPath &&
+      images[renderedCount - 1]?.path === renderedLastPath
 
     if (isAppend) {
-      const appended = images.slice(previous.length)
+      const appended = images.slice(renderedCount)
       if (appended.length) {
         await nextTick()
         const initialHeights = readColumnHeights()
         const appendedColumns = distributeImages(appended, initialHeights)
         masonryColumns.value = masonryColumns.value.map((column, index) => [...column, ...appendedColumns[index]])
       }
+      renderedCount = images.length
+      renderedLastPath = images[images.length - 1]?.path ?? renderedLastPath
       return
     }
 
     masonryColumns.value = images.length ? distributeImages(images) : []
+    renderedCount = images.length
+    renderedFirstPath = images[0]?.path ?? ''
+    renderedLastPath = images[images.length - 1]?.path ?? ''
   },
   { immediate: true }
 )
@@ -190,6 +210,9 @@ watch(
   columnCount,
   () => {
     masonryColumns.value = props.images.length ? distributeImages(props.images) : []
+    renderedCount = props.images.length
+    renderedFirstPath = props.images[0]?.path ?? ''
+    renderedLastPath = props.images[props.images.length - 1]?.path ?? ''
   }
 )
 
@@ -252,14 +275,17 @@ function fileExt(name?: string) {
   overflow: hidden;
   cursor: pointer;
   border: 1px solid var(--stroke);
-  background: rgba(255, 255, 255, 0.72);
-  box-shadow: 0 6px 16px rgba(20, 25, 35, 0.04);
+  background: var(--panel);
+  box-shadow: var(--shadow-tiny);
+  backdrop-filter: blur(14px);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
+  content-visibility: auto;
+  contain-intrinsic-size: 220px 160px;
 }
 
 .tile:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 22px rgba(20, 25, 35, 0.08);
+  box-shadow: var(--shadow-soft);
 }
 
 .thumb {

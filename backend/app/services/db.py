@@ -117,6 +117,15 @@ def list_users():
         conn.close()
 
 
+def count_admins() -> int:
+    conn = get_connection()
+    try:
+        row = conn.execute('SELECT COUNT(*) AS count FROM users WHERE is_admin = 1').fetchone()
+        return int(row['count'] or 0) if row else 0
+    finally:
+        conn.close()
+
+
 def create_user(username: str, password_hash: str, is_admin: bool, allowed_paths: list[str]):
     conn = get_connection()
     try:

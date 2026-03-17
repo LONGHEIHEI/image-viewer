@@ -1,7 +1,7 @@
 <template>
   <div class="page">
     <div class="page-header">
-      <div class="page-title">集合</div>
+      <div class="page-title">集合设置</div>
       <div class="page-actions">
         <n-button type="primary" @click="openCreate">新增集合</n-button>
       </div>
@@ -22,7 +22,7 @@
           </div>
           <div class="card-body">
             <div class="title">{{ item.name }}</div>
-            <div class="subtitle">{{ item.paths.join(', ') }}</div>
+            <div class="subtitle">已配置 {{ item.paths.length }} 个目录</div>
           </div>
           <div class="card-actions">
             <n-button size="small" @click="openEdit(item)">编辑</n-button>
@@ -43,15 +43,16 @@
     <n-modal
       v-model:show="showCreate"
       title="新增集合"
+      :trap-focus="!pickerVisible"
       :style="{ width: 'min(600px, 92vw)' }"
       :transition-name="null"
       :mask-transition-name="null"
     >
       <n-form class="flat-form modal-surface" label-placement="top" :show-feedback="false">
-        <n-form-item label="显示名称">
-          <n-input v-model:value="newCollection.name" placeholder="请输入显示名称" />
+        <n-form-item label="集合名称">
+          <n-input v-model:value="newCollection.name" placeholder="用于前台展示，例如：家庭相册" />
         </n-form-item>
-        <n-form-item label="文件夹">
+        <n-form-item label="图片来源目录">
           <div class="folder-block">
             <n-list bordered class="path-list">
               <n-list-item v-for="path in newCollection.paths" :key="path">
@@ -64,27 +65,35 @@
                 <div class="empty">未添加任何文件夹</div>
               </n-list-item>
             </n-list>
-            <n-button size="small" @click="openPicker('create')">添加</n-button>
+            <n-button size="small" @click="openPicker('create')">添加目录</n-button>
           </div>
         </n-form-item>
-        <n-form-item label="封面图">
+        <n-form-item label="固定封面路径">
           <n-input
             v-model:value="newCollection.cover_path"
-            placeholder="可选，留空则自动选择并固定"
+            placeholder="可选；留空时系统会自动选择封面"
           />
         </n-form-item>
-        <n-form-item label="访问密码">
-          <n-input v-model:value="newCollection.password" type="password" placeholder="可留空" />
+        <n-form-item label="访问密码（可选）">
+          <n-input v-model:value="newCollection.password" type="password" placeholder="留空表示公开访问" />
         </n-form-item>
-        <n-form-item>
-          <n-checkbox v-model:checked="newCollection.aggregate_subdirs">汇总子目录</n-checkbox>
+        <n-form-item label="确认访问密码">
+          <n-input v-model:value="newCollection.confirmPassword" type="password" placeholder="请再次输入访问密码" />
         </n-form-item>
-        <n-form-item>
-          <n-checkbox v-model:checked="newCollection.privacy_enabled">开启隐私显示</n-checkbox>
-        </n-form-item>
+        <div v-if="createPasswordMismatch" class="form-tip form-tip--error">两次输入的访问密码不一致</div>
+        <div class="check-list">
+          <div class="option-item">
+            <n-checkbox v-model:checked="newCollection.aggregate_subdirs">包含子目录（递归）</n-checkbox>
+            <div class="option-tip">开启后会自动扫描并展示所选目录下的全部子目录内容。</div>
+          </div>
+          <div class="option-item">
+            <n-checkbox v-model:checked="newCollection.privacy_enabled">启用隐私模式（默认模糊）</n-checkbox>
+            <div class="option-tip">列表缩略图默认模糊，点击后才会显示清晰图片。</div>
+          </div>
+        </div>
         <div class="form-actions">
           <n-button @click="showCreate = false">取消</n-button>
-          <n-button type="primary" @click="create">创建</n-button>
+          <n-button type="primary" :disabled="!canCreateCollection" @click="create">创建</n-button>
         </div>
       </n-form>
     </n-modal>
@@ -92,15 +101,16 @@
     <n-modal
       v-model:show="showEdit"
       title="编辑集合"
+      :trap-focus="!pickerVisible"
       :style="{ width: 'min(600px, 92vw)' }"
       :transition-name="null"
       :mask-transition-name="null"
     >
       <n-form class="flat-form modal-surface" label-placement="top" :show-feedback="false">
-        <n-form-item label="显示名称">
-          <n-input v-model:value="editForm.name" placeholder="请输入显示名称" />
+        <n-form-item label="集合名称">
+          <n-input v-model:value="editForm.name" placeholder="用于前台展示，例如：家庭相册" />
         </n-form-item>
-        <n-form-item label="文件夹">
+        <n-form-item label="图片来源目录">
           <div class="folder-block">
             <n-list bordered class="path-list">
               <n-list-item v-for="path in editForm.paths" :key="path">
@@ -113,33 +123,43 @@
                 <div class="empty">未添加任何文件夹</div>
               </n-list-item>
             </n-list>
-            <n-button size="small" @click="openPicker('edit')">添加</n-button>
+            <n-button size="small" @click="openPicker('edit')">添加目录</n-button>
           </div>
         </n-form-item>
-        <n-form-item label="封面图">
+        <n-form-item label="固定封面路径">
           <n-input
             v-model:value="editForm.cover_path"
-            placeholder="可选，留空则自动选择并固定"
+            placeholder="可选；留空时系统会自动选择封面"
           />
         </n-form-item>
-        <n-form-item label="新密码">
+        <n-form-item label="新访问密码">
           <n-input v-model:value="editForm.password" type="password" placeholder="不修改请留空" />
         </n-form-item>
-        <n-form-item>
-          <n-checkbox v-model:checked="editForm.clearPassword">清空密码</n-checkbox>
+        <n-form-item label="确认新访问密码">
+          <n-input v-model:value="editForm.confirmPassword" type="password" placeholder="请再次输入新访问密码" />
         </n-form-item>
-        <n-form-item>
-          <n-checkbox v-model:checked="editForm.aggregate_subdirs">汇总子目录</n-checkbox>
-        </n-form-item>
-        <n-form-item>
-          <n-checkbox v-model:checked="editForm.clearCover">清空封面</n-checkbox>
-        </n-form-item>
-        <n-form-item>
-          <n-checkbox v-model:checked="editForm.privacy_enabled">开启隐私显示</n-checkbox>
-        </n-form-item>
+        <div v-if="editPasswordMismatch" class="form-tip form-tip--error">两次输入的新访问密码不一致</div>
+        <div class="check-list">
+          <div class="option-item">
+            <n-checkbox v-model:checked="editForm.clearPassword">清空访问密码</n-checkbox>
+            <div class="option-tip">保存后该集合将不再需要密码即可访问。</div>
+          </div>
+          <div class="option-item">
+            <n-checkbox v-model:checked="editForm.aggregate_subdirs">包含子目录（递归）</n-checkbox>
+            <div class="option-tip">开启后会自动扫描并展示所选目录下的全部子目录内容。</div>
+          </div>
+          <div class="option-item">
+            <n-checkbox v-model:checked="editForm.clearCover">清空固定封面</n-checkbox>
+            <div class="option-tip">保存后将取消手动封面并恢复自动选择。</div>
+          </div>
+          <div class="option-item">
+            <n-checkbox v-model:checked="editForm.privacy_enabled">启用隐私模式（默认模糊）</n-checkbox>
+            <div class="option-tip">列表缩略图默认模糊，点击后才会显示清晰图片。</div>
+          </div>
+        </div>
         <div class="form-actions">
           <n-button @click="showEdit = false">取消</n-button>
-          <n-button type="primary" @click="save">保存</n-button>
+          <n-button type="primary" :disabled="!canSaveCollection" @click="save">保存</n-button>
         </div>
       </n-form>
     </n-modal>
@@ -157,7 +177,12 @@
           <span class="mono">\\\\server</span> 或 <span class="mono">\\\\192.168.1.10</span>。
         </div>
         <div class="picker-input">
-          <n-input v-model:value="manualPath" placeholder="手动输入路径" clearable />
+          <n-input
+            ref="manualPathInputRef"
+            v-model:value="manualPath"
+            placeholder="手动输入路径"
+            clearable
+          />
           <n-button size="small" type="primary" @click="addManualPath">添加</n-button>
         </div>
         <div class="picker-header">
@@ -199,7 +224,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import {
   NButton,
   NList,
@@ -240,11 +265,13 @@ const pickerFolders = ref<FolderItem[]>([])
 const pickerTarget = ref<'create' | 'edit'>('create')
 const pickerSearch = ref('')
 const manualPath = ref('')
+const manualPathInputRef = ref<{ focus: () => void } | null>(null)
 
 const newCollection = ref({
   name: '',
   paths: [] as string[],
   password: '',
+  confirmPassword: '',
   cover_path: '',
   aggregate_subdirs: false,
   privacy_enabled: false
@@ -255,6 +282,7 @@ const editForm = ref({
   name: '',
   paths: [] as string[],
   password: '',
+  confirmPassword: '',
   clearPassword: false,
   cover_path: '',
   clearCover: false,
@@ -314,6 +342,8 @@ async function openPicker(target: 'create' | 'edit') {
   pickerSearch.value = ''
   manualPath.value = ''
   pickerVisible.value = true
+  await nextTick()
+  manualPathInputRef.value?.focus?.()
   await loadRoots()
 }
 
@@ -387,6 +417,7 @@ function openCreate() {
     name: '',
     paths: [],
     password: '',
+    confirmPassword: '',
     cover_path: '',
     aggregate_subdirs: false,
     privacy_enabled: false
@@ -394,7 +425,23 @@ function openCreate() {
   showCreate.value = true
 }
 
+const createPasswordMismatch = computed(() => {
+  const hasInput = Boolean(newCollection.value.password) || Boolean(newCollection.value.confirmPassword)
+  if (!hasInput) return false
+  return newCollection.value.password !== newCollection.value.confirmPassword
+})
+
+const canCreateCollection = computed(() => {
+  if (!newCollection.value.name.trim()) return false
+  if (!newCollection.value.paths.length) return false
+  return !createPasswordMismatch.value
+})
+
 async function create() {
+  if (createPasswordMismatch.value) {
+    notification.error({ title: '创建失败', content: '两次输入的访问密码不一致' })
+    return
+  }
   error.value = ''
   try {
     await createCollection({
@@ -420,6 +467,7 @@ function openEdit(item: CollectionAdmin) {
     name: item.name,
     paths: [...item.paths],
     password: '',
+    confirmPassword: '',
     clearPassword: false,
     cover_path: item.cover_path || '',
     clearCover: false,
@@ -429,8 +477,25 @@ function openEdit(item: CollectionAdmin) {
   showEdit.value = true
 }
 
+const editPasswordMismatch = computed(() => {
+  const hasInput = Boolean(editForm.value.password) || Boolean(editForm.value.confirmPassword)
+  if (!hasInput) return false
+  return editForm.value.password !== editForm.value.confirmPassword
+})
+
+const canSaveCollection = computed(() => {
+  if (!editing.value) return false
+  if (!editForm.value.name.trim()) return false
+  if (!editForm.value.paths.length) return false
+  return !editPasswordMismatch.value
+})
+
 async function save() {
   if (!editing.value) return
+  if (editPasswordMismatch.value) {
+    notification.error({ title: '更新失败', content: '两次输入的新访问密码不一致' })
+    return
+  }
   error.value = ''
   try {
     await updateCollection(editing.value.id, {
@@ -482,14 +547,14 @@ function onCoverError(event: Event) {
 
 .admin-section {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .cover {
-  width: 100%;
-  aspect-ratio: 16 / 9;
+  width: 124px;
+  height: 74px;
   border: 1px solid var(--stroke);
-  border-radius: 12px;
+  border-radius: 10px;
   overflow: hidden;
   background: #f7f7f7;
   flex: 0 0 auto;
@@ -536,29 +601,31 @@ function onCoverError(event: Event) {
 
 .collections-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 16px;
+  grid-template-columns: 1fr;
+  gap: 10px;
 }
 
 .collection-card {
   display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
   gap: 10px;
-  padding: 10px;
+  padding: 8px 10px;
   border: 1px solid rgba(27, 30, 39, 0.08);
-  border-radius: 14px;
+  border-radius: 12px;
   background: rgba(255, 255, 255, 0.72);
-  box-shadow: 0 6px 16px rgba(20, 25, 35, 0.04);
+  box-shadow: 0 4px 12px rgba(20, 25, 35, 0.04);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 .collection-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 22px rgba(20, 25, 35, 0.08);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(20, 25, 35, 0.08);
 }
 
 .card-body {
   display: grid;
-  gap: 4px;
+  gap: 2px;
   min-width: 0;
 }
 
@@ -573,15 +640,20 @@ function onCoverError(event: Event) {
 .subtitle {
   font-size: 12px;
   color: var(--muted);
-  white-space: nowrap;
+  line-height: 1.35;
+  word-break: break-all;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .card-actions {
   display: flex;
-  justify-content: flex-end;
-  gap: 8px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  align-items: flex-end;
 }
 
 .name {
@@ -590,7 +662,7 @@ function onCoverError(event: Event) {
 
 .folder-block {
   display: grid;
-  gap: 6px;
+  gap: 4px;
   width: 100%;
 }
 
@@ -601,7 +673,7 @@ function onCoverError(event: Event) {
 }
 
 .path-list :deep(.n-list-item) {
-  padding: 6px 8px;
+  padding: 4px 6px;
   border-radius: 0;
   border: none;
   background: transparent;
@@ -619,7 +691,7 @@ function onCoverError(event: Event) {
 
 .picker {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .picker-tip {
@@ -634,7 +706,7 @@ function onCoverError(event: Event) {
 
 .picker-input {
   display: grid;
-  gap: 6px;
+  gap: 4px;
   grid-template-columns: 1fr auto;
   align-items: center;
 }
@@ -643,7 +715,7 @@ function onCoverError(event: Event) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
@@ -660,21 +732,21 @@ function onCoverError(event: Event) {
 .picker-search {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
 .picker-list {
-  height: 320px;
-  max-height: 320px;
-  min-height: 320px;
+  height: 280px;
+  max-height: 280px;
+  min-height: 240px;
   overflow-y: scroll;
   overflow-x: hidden;
   scrollbar-gutter: stable;
 }
 
 .picker-list :deep(.n-list-item) {
-  padding: 8px 10px;
+  padding: 6px 8px;
   border-radius: 0;
   border: none;
   background: transparent;
@@ -712,15 +784,54 @@ function onCoverError(event: Event) {
 
 .flat-form {
   display: grid;
-  gap: 10px;
-  padding: 6px 2px 2px;
+  gap: 8px;
+  padding: 4px 0 0;
+}
+
+.form-tip {
+  font-size: 12px;
+  margin-top: -6px;
+}
+
+.form-tip--error {
+  color: #b00020;
 }
 
 .form-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  padding-top: 2px;
+  gap: 6px;
+  padding-top: 0;
+}
+
+.check-list {
+  display: grid;
+  gap: 6px;
+  padding-top: 1px;
+}
+
+.option-item {
+  display: grid;
+  gap: 2px;
+  padding: 6px 8px;
+  border: 1px solid var(--stroke);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.option-tip {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--muted);
+  padding-left: 24px;
+}
+
+.check-list :deep(.n-checkbox) {
+  min-height: 24px;
+}
+
+.check-list :deep(.n-checkbox__label) {
+  line-height: 1.2;
 }
 
 .flat-form :deep(.n-form-item) {
@@ -730,11 +841,11 @@ function onCoverError(event: Event) {
 .flat-form :deep(.n-form-item-label) {
   font-size: 12px;
   font-weight: 600;
-  padding-bottom: 2px;
+  padding-bottom: 1px;
 }
 
 .flat-form :deep(.n-form-item-blank) {
-  margin-top: 2px;
+  margin-top: 0;
 }
 
 .flat-form :deep(.n-card-header),
@@ -749,7 +860,7 @@ function onCoverError(event: Event) {
 }
 
 .flat-form :deep(.n-list-item) {
-  padding: 6px 8px;
+  padding: 4px 6px;
   border-radius: 0;
   border: none;
   background: transparent;
@@ -759,7 +870,7 @@ function onCoverError(event: Event) {
   background: #fff;
   border: 1px solid var(--stroke);
   border-radius: 10px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   box-shadow: none;
 }
 
@@ -769,18 +880,27 @@ function onCoverError(event: Event) {
     flex-wrap: wrap;
   }
 
-  .collections-grid {
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 12px;
-  }
-
   .card-actions {
+    flex-direction: row;
     justify-content: flex-start;
+    align-items: center;
     flex-wrap: wrap;
   }
 
   .card-actions > * {
-    flex: 1 1 120px;
+    flex: 0 0 auto;
+  }
+
+  .collection-card {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .cover {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
   }
 
   .picker-input {
@@ -788,8 +908,8 @@ function onCoverError(event: Event) {
   }
 
   .picker-list {
-    height: min(320px, 48vh);
-    max-height: min(320px, 48vh);
+    height: min(300px, 46vh);
+    max-height: min(300px, 46vh);
     min-height: 220px;
   }
 
@@ -799,12 +919,8 @@ function onCoverError(event: Event) {
 }
 
 @media (max-width: 640px) {
-  .collections-grid {
-    grid-template-columns: 1fr;
-  }
-
   .collection-card {
-    padding: 10px;
+    padding: 8px;
   }
 
   .picker-header {
@@ -814,5 +930,113 @@ function onCoverError(event: Event) {
   .picker-header :deep(.n-space) {
     width: 100%;
   }
+}
+/* Desktop-first card layout for collection settings */
+.collections-grid {
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+}
+
+.collection-card {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr auto;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  border: 1px solid var(--stroke);
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: var(--shadow-tiny);
+  backdrop-filter: blur(14px);
+  overflow: hidden;
+}
+
+.collection-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft);
+}
+
+.cover {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border: none;
+  border-radius: 0;
+}
+
+.card-body {
+  padding: 10px 12px 8px;
+  gap: 4px;
+}
+
+.card-actions {
+  flex-direction: row;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 12px 12px;
+  border-top: 1px solid rgba(27, 30, 39, 0.06);
+}
+
+@media (max-width: 960px) {
+  .collections-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+  }
+
+  .card-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .collections-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Unified spacing rhythm for settings pages: 12 / 8 / 6 */
+.admin-section {
+  gap: 12px;
+}
+
+.collections-grid {
+  gap: 12px;
+}
+
+.collection-card {
+  border-radius: 12px;
+}
+
+.card-body {
+  padding: 12px;
+  gap: 6px;
+}
+
+.card-actions {
+  gap: 6px;
+  padding: 8px 12px 12px;
+}
+
+.flat-form {
+  gap: 8px;
+}
+
+.check-list {
+  gap: 6px;
+}
+
+.option-item {
+  gap: 2px;
+  padding: 8px;
+}
+
+.form-actions {
+  gap: 8px;
+}
+
+.picker {
+  gap: 8px;
 }
 </style>
