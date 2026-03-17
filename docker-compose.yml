@@ -9,7 +9,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "8010:8010"
+      - "8290:8010"
     environment:
       TZ: Asia/Shanghai
       DB_PATH: /app/backend/data/app.db
@@ -17,7 +17,7 @@ services:
       CACHE_DIR: /app/cache
     volumes:
       - ./backend/data:/app/backend/data
-      - ./photos:/app/photos:ro
+      - /mnt/pool1/download/picture:/app/photos:ro
       - ./cache:/app/cache
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8010/api/health || exit 1"]
