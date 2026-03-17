@@ -28,12 +28,15 @@ COPY --from=frontend-builder /build/frontend/dist /app/frontend/dist
 COPY --from=frontend-builder /build/frontend/dist /app/backend/app/static
 
 RUN useradd --create-home --uid 10001 appuser \
-  && mkdir -p /app/backend/data /app/photos /app/cache \
+  && mkdir -p /app/backend/data /app/photos /app/cache /data /cache \
   && chown -R appuser:appuser /app
+
+RUN chown -R appuser:appuser /data /cache
 
 USER appuser
 
 ENV DB_PATH=/app/backend/data/app.db \
+    PHOTO_ROOT=/app/photos \
     PHOTOS_DIR=/app/photos \
     CACHE_DIR=/app/cache
 
