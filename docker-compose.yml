@@ -7,6 +7,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        # Set to "0" if you don't need 7z/rar support to reduce image size.
+        INSTALL_ARCHIVE_TOOLS: "1"
     restart: unless-stopped
     ports:
       - "8290:8010"

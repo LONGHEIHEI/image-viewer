@@ -1,10 +1,27 @@
 .git
+.gitignore
 .vscode
+.idea
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/node_modules
+**/.DS_Store
+**/Thumbs.db
+
+# local virtualenvs / caches
 backend/.venv
-backend/__pycache__
-frontend/node_modules
+backend/data
+backend/tests
+frontend/.vite
 frontend/dist
 cache
-data
 photos
-Python
+
+# docs and scripts are not required for runtime image
+docs
+scripts
