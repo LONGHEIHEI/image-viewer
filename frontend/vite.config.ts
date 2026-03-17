@@ -8,12 +8,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: [
-        'favicon.ico',
-        'apple-touch-icon.png',
-        'icons/icon-192.png',
-        'icons/icon-512.png',
-        'icons/icon-maskable-192.png',
-        'icons/icon-maskable-512.png'
+        'icon.png'
       ],
       manifest: {
         name: '轻图',
@@ -25,23 +20,23 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: '/icons/icon-192.png',
+            src: '/icon.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: '/icons/icon-512.png',
+            src: '/icon.png',
             sizes: '512x512',
             type: 'image/png'
           },
           {
-            src: '/icons/icon-maskable-192.png',
+            src: '/icon.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'maskable'
           },
           {
-            src: '/icons/icon-maskable-512.png',
+            src: '/icon.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable'
