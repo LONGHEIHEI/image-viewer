@@ -8,11 +8,11 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        # Set to "0" if you don't need 7z/rar support to reduce image size.
+        # Keep archive support (7z/rar) enabled.
         INSTALL_ARCHIVE_TOOLS: "1"
     restart: unless-stopped
     ports:
-      - "8290:80"
+      - "8290:8010"
     environment:
       TZ: Asia/Shanghai
       DB_PATH: /app/backend/data/app.db
@@ -24,7 +24,7 @@ services:
       - /mnt/pool1/download/picture:/app/photos:ro
       - /data/docker/image-views/cache:/app/cache
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8010/api/health || exit 1"]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8010/docs', timeout=3)\" || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -34,3 +34,4 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
