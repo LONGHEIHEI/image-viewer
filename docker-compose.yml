@@ -22,9 +22,9 @@ services:
       PHOTOS_DIR: /app/photos
       CACHE_DIR: /app/cache
     volumes:
-      - ./backend/data:/app/backend/data
+      - /data/docker/image-views/data:/app/backend/data
       - /mnt/pool1/download/picture:/app/photos:ro
-      - ./cache:/app/cache
+      - /data/docker/image-views/cache:/app/cache
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8010/api/health || exit 1"]
       interval: 30s
