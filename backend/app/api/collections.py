@@ -113,6 +113,36 @@ def _require_collection_token(collection: dict, request: Request, user: dict):
         raise HTTPException(status_code=401, detail='集合访问凭证无效')
 
 
+def _effective_allowed_paths(user: dict) -> List[str]:
+    if user.get('is_admin'):
+        return ['']
+    return user.get('allowed_paths', [])
+
+
+def _build_collection_scope(collection: dict, request: Request, user: dict) -> tuple[List[str], List[str]]:
+    # Centralize token + path normalization so every collection endpoint
+    # validates access with the same rules and error floor.
+    _require_collection_token(collection, request, user)
+    allowed = _effective_allowed_paths(user)
+    if not allowed:
+        raise HTTPException(status_code=403, detail='未配置可访问目录')
+    return _normalize_paths_for_listing(collection['paths']), _normalize_paths_for_listing(allowed)
+
+
+def _ensure_collection_path_access(
+    rel_path: str,
+    collection_paths: List[str],
+    allowed_paths: List[str],
+    *,
+    allow_ancestor: bool = False
+):
+    matcher = is_within_or_ancestor if allow_ancestor else is_within_allowed
+    if not matcher(rel_path, collection_paths):
+        raise HTTPException(status_code=403, detail='不在集合路径内')
+    if '' not in allowed_paths and not matcher(rel_path, allowed_paths):
+        raise HTTPException(status_code=403, detail='无权限访问')
+
+
 def _filter_listing(listing: dict, allowed_paths: List[str]):
     if not allowed_paths:
         return listing
@@ -414,7 +444,7 @@ def update_collection(collection_id: int, payload: CollectionUpdate):
     return {'status': 'ok'}
 
 
-@router.delete('/collections/{collection_id}')
+@router.delete('/collections/{collection_id}', dependencies=[Depends(require_admin)])
 def delete_collection(collection_id: int):
     if not db.get_collection_by_id(collection_id):
         raise HTTPException(status_code=404, detail='集合不存在')
@@ -438,17 +468,9 @@ def access_collection(collection_id: int, payload: CollectionAccess, user: dict 
 @router.get('/collections/{collection_id}/cover')
 def collection_cover(collection_id: int, request: Request, user: dict = Depends(get_current_user)):
     collection = _get_collection_or_404(collection_id)
-    _require_collection_token(collection, request, user)
-    allowed = user.get('allowed_paths', [])
-    if user.get('is_admin'):
-        allowed = ['']
-    if not allowed:
-        raise HTTPException(status_code=403, detail='未配置可访问目录')
-
-    collection_paths = _normalize_paths_for_listing(collection['paths'])
-    allowed_norm = _normalize_paths_for_listing(allowed)
+    collection_paths, allowed_norm = _build_collection_scope(collection, request, user)
     eligible_paths = collection_paths
-    if allowed and '' not in allowed_norm:
+    if '' not in allowed_norm:
         eligible_paths = [
             p for p in collection_paths
             if is_within_allowed(p, allowed_norm) or is_within_or_ancestor(p, allowed_norm)
@@ -485,15 +507,8 @@ def collection_tree(
     user: dict = Depends(get_current_user)
 ):
     collection = _get_collection_or_404(collection_id)
-    _require_collection_token(collection, request, user)
-    allowed = user.get('allowed_paths', [])
-    if user.get('is_admin'):
-        allowed = ['']
-    if not allowed:
-        raise HTTPException(status_code=403, detail='未配置可访问目录')
-
-    collection_paths = _normalize_paths_for_listing(collection['paths'])
-    return _build_collection_tree(collection_paths, allowed, depth)
+    collection_paths, allowed_norm = _build_collection_scope(collection, request, user)
+    return _build_collection_tree(collection_paths, allowed_norm, depth)
 
 
 @router.get('/collections/{collection_id}/folder')
@@ -508,15 +523,7 @@ def collection_folder(
     user: dict = Depends(get_current_user)
 ):
     collection = _get_collection_or_404(collection_id)
-    _require_collection_token(collection, request, user)
-    allowed = user.get('allowed_paths', [])
-    if user.get('is_admin'):
-        allowed = ['']
-    if not allowed:
-        raise HTTPException(status_code=403, detail='未配置可访问目录')
-
-    collection_paths = _normalize_paths_for_listing(collection['paths'])
-    allowed_norm = _normalize_paths_for_listing(allowed)
+    collection_paths, allowed_norm = _build_collection_scope(collection, request, user)
     if path == '':
         if '' in collection_paths:
             abs_path = resolve_any_path(settings.photo_root, '')
@@ -540,14 +547,11 @@ def collection_folder(
             listing = _filter_listing(listing, allowed_norm)
             return listing
         listing = _collection_root_listing(collection_paths)
-        listing = _filter_listing(listing, allowed)
+        listing = _filter_listing(listing, allowed_norm)
         return listing
 
     rel_path = _normalize_path_for_listing(path)
-    if not is_within_or_ancestor(rel_path, collection_paths):
-        raise HTTPException(status_code=403, detail='不在集合路径内')
-    if '' not in allowed_norm and not is_within_or_ancestor(rel_path, allowed_norm):
-        raise HTTPException(status_code=403, detail='无权限访问')
+    _ensure_collection_path_access(rel_path, collection_paths, allowed_norm, allow_ancestor=True)
 
     abs_path = resolve_any_path(settings.photo_root, rel_path)
     try:
@@ -579,20 +583,9 @@ def collection_folder_cover(
     user: dict = Depends(get_current_user)
 ):
     collection = _get_collection_or_404(collection_id)
-    _require_collection_token(collection, request, user)
-    allowed = user.get('allowed_paths', [])
-    if user.get('is_admin'):
-        allowed = ['']
-    if not allowed:
-        raise HTTPException(status_code=403, detail='未配置可访问目录')
-
+    collection_paths, allowed_norm = _build_collection_scope(collection, request, user)
     rel_path = _normalize_path_for_listing(path)
-    collection_paths = _normalize_paths_for_listing(collection['paths'])
-    allowed_norm = _normalize_paths_for_listing(allowed)
-    if not is_within_or_ancestor(rel_path, collection_paths):
-        raise HTTPException(status_code=403, detail='不在集合路径内')
-    if '' not in allowed_norm and not is_within_or_ancestor(rel_path, allowed_norm):
-        raise HTTPException(status_code=403, detail='无权限访问')
+    _ensure_collection_path_access(rel_path, collection_paths, allowed_norm, allow_ancestor=True)
 
     abs_path = resolve_any_path(settings.photo_root, rel_path)
     try:
@@ -617,20 +610,9 @@ def collection_archive(
     user: dict = Depends(get_current_user)
 ):
     collection = _get_collection_or_404(collection_id)
-    _require_collection_token(collection, request, user)
-    allowed = user.get('allowed_paths', [])
-    if user.get('is_admin'):
-        allowed = ['']
-    if not allowed:
-        raise HTTPException(status_code=403, detail='未配置可访问目录')
-
+    collection_paths, allowed_norm = _build_collection_scope(collection, request, user)
     rel_path = _normalize_path_for_listing(path)
-    collection_paths = _normalize_paths_for_listing(collection['paths'])
-    allowed_norm = _normalize_paths_for_listing(allowed)
-    if not is_within_allowed(rel_path, collection_paths):
-        raise HTTPException(status_code=403, detail='不在集合路径内')
-    if '' not in allowed_norm and not is_within_allowed(rel_path, allowed_norm):
-        raise HTTPException(status_code=403, detail='无权限访问')
+    _ensure_collection_path_access(rel_path, collection_paths, allowed_norm)
 
     abs_path = resolve_any_path(settings.photo_root, rel_path)
     try:
@@ -645,20 +627,9 @@ def collection_archive(
 @router.get('/collections/{collection_id}/image')
 def collection_image(collection_id: int, path: str, request: Request, user: dict = Depends(get_current_user)):
     collection = _get_collection_or_404(collection_id)
-    _require_collection_token(collection, request, user)
-    allowed = user.get('allowed_paths', [])
-    if user.get('is_admin'):
-        allowed = ['']
-    if not allowed:
-        raise HTTPException(status_code=403, detail='未配置可访问目录')
-
+    collection_paths, allowed_norm = _build_collection_scope(collection, request, user)
     rel_path = _normalize_path_for_listing(path)
-    collection_paths = _normalize_paths_for_listing(collection['paths'])
-    allowed_norm = _normalize_paths_for_listing(allowed)
-    if not is_within_allowed(rel_path, collection_paths):
-        raise HTTPException(status_code=403, detail='不在集合路径内')
-    if '' not in allowed_norm and not is_within_allowed(rel_path, allowed_norm):
-        raise HTTPException(status_code=403, detail='无权限访问')
+    _ensure_collection_path_access(rel_path, collection_paths, allowed_norm)
 
     abs_path = resolve_any_path(settings.photo_root, rel_path)
     return FileResponse(abs_path)
@@ -667,20 +638,9 @@ def collection_image(collection_id: int, path: str, request: Request, user: dict
 @router.get('/collections/{collection_id}/thumb')
 def collection_thumb(collection_id: int, path: str, request: Request, user: dict = Depends(get_current_user)):
     collection = _get_collection_or_404(collection_id)
-    _require_collection_token(collection, request, user)
-    allowed = user.get('allowed_paths', [])
-    if user.get('is_admin'):
-        allowed = ['']
-    if not allowed:
-        raise HTTPException(status_code=403, detail='未配置可访问目录')
-
+    collection_paths, allowed_norm = _build_collection_scope(collection, request, user)
     rel_path = _normalize_path_for_listing(path)
-    collection_paths = _normalize_paths_for_listing(collection['paths'])
-    allowed_norm = _normalize_paths_for_listing(allowed)
-    if not is_within_allowed(rel_path, collection_paths):
-        raise HTTPException(status_code=403, detail='不在集合路径内')
-    if '' not in allowed_norm and not is_within_allowed(rel_path, allowed_norm):
-        raise HTTPException(status_code=403, detail='无权限访问')
+    _ensure_collection_path_access(rel_path, collection_paths, allowed_norm)
 
     abs_path = resolve_any_path(settings.photo_root, rel_path)
     thumb_path = get_thumbnail(abs_path, settings.thumb_cache, settings.thumb_size)
@@ -696,20 +656,9 @@ def collection_archive_image(
     user: dict = Depends(get_current_user)
 ):
     collection = _get_collection_or_404(collection_id)
-    _require_collection_token(collection, request, user)
-    allowed = user.get('allowed_paths', [])
-    if user.get('is_admin'):
-        allowed = ['']
-    if not allowed:
-        raise HTTPException(status_code=403, detail='未配置可访问目录')
-
+    collection_paths, allowed_norm = _build_collection_scope(collection, request, user)
     rel_path = _normalize_path_for_listing(path)
-    collection_paths = _normalize_paths_for_listing(collection['paths'])
-    allowed_norm = _normalize_paths_for_listing(allowed)
-    if not is_within_allowed(rel_path, collection_paths):
-        raise HTTPException(status_code=403, detail='不在集合路径内')
-    if '' not in allowed_norm and not is_within_allowed(rel_path, allowed_norm):
-        raise HTTPException(status_code=403, detail='无权限访问')
+    _ensure_collection_path_access(rel_path, collection_paths, allowed_norm)
 
     abs_path = resolve_any_path(settings.photo_root, rel_path)
     try:
@@ -730,20 +679,9 @@ def collection_archive_thumb(
     user: dict = Depends(get_current_user)
 ):
     collection = _get_collection_or_404(collection_id)
-    _require_collection_token(collection, request, user)
-    allowed = user.get('allowed_paths', [])
-    if user.get('is_admin'):
-        allowed = ['']
-    if not allowed:
-        raise HTTPException(status_code=403, detail='未配置可访问目录')
-
+    collection_paths, allowed_norm = _build_collection_scope(collection, request, user)
     rel_path = _normalize_path_for_listing(path)
-    collection_paths = _normalize_paths_for_listing(collection['paths'])
-    allowed_norm = _normalize_paths_for_listing(allowed)
-    if not is_within_allowed(rel_path, collection_paths):
-        raise HTTPException(status_code=403, detail='不在集合路径内')
-    if '' not in allowed_norm and not is_within_allowed(rel_path, allowed_norm):
-        raise HTTPException(status_code=403, detail='无权限访问')
+    _ensure_collection_path_access(rel_path, collection_paths, allowed_norm)
 
     abs_path = resolve_any_path(settings.photo_root, rel_path)
     try:
@@ -763,20 +701,9 @@ def collection_archive_cover(
     user: dict = Depends(get_current_user)
 ):
     collection = _get_collection_or_404(collection_id)
-    _require_collection_token(collection, request, user)
-    allowed = user.get('allowed_paths', [])
-    if user.get('is_admin'):
-        allowed = ['']
-    if not allowed:
-        raise HTTPException(status_code=403, detail='未配置可访问目录')
-
+    collection_paths, allowed_norm = _build_collection_scope(collection, request, user)
     rel_path = _normalize_path_for_listing(path)
-    collection_paths = _normalize_paths_for_listing(collection['paths'])
-    allowed_norm = _normalize_paths_for_listing(allowed)
-    if not is_within_allowed(rel_path, collection_paths):
-        raise HTTPException(status_code=403, detail='不在集合路径内')
-    if '' not in allowed_norm and not is_within_allowed(rel_path, allowed_norm):
-        raise HTTPException(status_code=403, detail='无权限访问')
+    _ensure_collection_path_access(rel_path, collection_paths, allowed_norm)
 
     abs_path = resolve_any_path(settings.photo_root, rel_path)
     try:

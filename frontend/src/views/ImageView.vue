@@ -97,6 +97,14 @@ import {
 import ImageViewer from '../components/ImageViewer.vue'
 import { useGalleryStore } from '../store/gallery'
 import { buildFavoriteKey, favoritePayloadFromRoute, favoriteSourceLabel } from '../utils/favorites'
+import {
+  buildImageRouteQuery,
+  getPathBasename,
+  getParentFolderFromPath,
+  parseCollectionId,
+  parseGalleryView,
+  readQueryString
+} from '../utils/galleryRoute'
 
 type ViewerExpose = {
   toggleFullscreen: () => void
@@ -117,22 +125,17 @@ const route = useRoute()
 const router = useRouter()
 const store = useGalleryStore()
 
-const path = computed(() => String(route.query.path || ''))
-const archive = computed(() => String(route.query.archive || ''))
-const file = computed(() => String(route.query.file || ''))
-const folder = computed(() => String(route.query.folder || ''))
+const path = computed(() => readQueryString(route.query.path))
+const archive = computed(() => readQueryString(route.query.archive))
+const file = computed(() => readQueryString(route.query.file))
+const folder = computed(() => readQueryString(route.query.folder))
 const privacy = computed(() => route.query.privacy === '1')
 const hasIndex = computed(() => route.query.index !== undefined)
 const indexParam = computed(() => (hasIndex.value ? Number(route.query.index) : -1))
 
-const collectionId = computed(() => {
-  const raw = route.query.collection
-  if (raw === undefined || raw === null || raw === '') return null
-  const num = Number(raw)
-  return Number.isFinite(num) ? num : null
-})
+const collectionId = computed(() => parseCollectionId(route.query.collection))
 
-const viewMode = computed(() => (route.query.view === 'flat' ? 'flat' : 'folder'))
+const viewMode = computed(() => parseGalleryView(route.query.view))
 const isCollection = computed(() => collectionId.value !== null)
 const drawerWidth = computed(() => (typeof window !== 'undefined' && window.innerWidth <= 960 ? '84vw' : 420))
 
@@ -149,7 +152,7 @@ const src = computed(() => {
   return imageUrl(path.value)
 })
 
-const name = computed(() => file.value || path.value.split('/').pop() || '')
+const name = computed(() => file.value || getPathBasename(path.value))
 
 const items = computed(() => {
   if (isCollection.value) {
@@ -247,27 +250,16 @@ async function toggleFavorite() {
 }
 
 function buildImageQuery(index: number, itemPath: string) {
-  const query: Record<string, string> = {
-    index: String(index)
-  }
-  if (privacy.value) {
-    query.privacy = '1'
-  }
-  if (archive.value) {
-    query.archive = archive.value
-    query.file = itemPath
-    if (folder.value) {
-      query.folder = folder.value
-    }
-  } else {
-    query.path = itemPath
-    query.folder = folder.value || store.currentFolder
-  }
-  if (isCollection.value) {
-    query.collection = String(collectionId.value)
-    query.view = viewMode.value
-  }
-  return query
+  return buildImageRouteQuery({
+    index,
+    path: archive.value ? undefined : itemPath,
+    archive: archive.value || undefined,
+    file: archive.value ? itemPath : undefined,
+    folder: folder.value || (archive.value ? '' : store.currentFolder),
+    collectionId: collectionId.value,
+    view: viewMode.value,
+    privacyEnabled: privacy.value
+  })
 }
 
 function navigateTo(index: number) {
@@ -357,7 +349,7 @@ onMounted(async () => {
         await store.loadCollectionArchive(collectionId.value as number, archive.value)
       }
     } else if (path.value) {
-      const targetFolder = folder.value || path.value.split('/').slice(0, -1).join('/')
+      const targetFolder = folder.value || getParentFolderFromPath(path.value)
       if (!store.collectionListing || store.collectionListing.folder !== targetFolder) {
         await store.loadCollectionFolder(collectionId.value as number, targetFolder, 1, 20, false, viewMode.value)
       }
@@ -369,7 +361,7 @@ onMounted(async () => {
       await store.loadArchive(archive.value)
     }
   } else if (path.value) {
-    const targetFolder = folder.value || path.value.split('/').slice(0, -1).join('/')
+    const targetFolder = folder.value || getParentFolderFromPath(path.value)
     if (!store.listing || store.listing.folder !== targetFolder) {
       await store.loadFolder(targetFolder)
     }

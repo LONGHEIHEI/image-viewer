@@ -96,6 +96,7 @@ import PrivacyRevealButton from '../components/PrivacyRevealButton.vue'
 import ImageBrowserSection from '../components/ImageBrowserSection.vue'
 import { usePrivacyReveal } from '../composables/usePrivacyReveal'
 import { buildFavoriteKey } from '../utils/favorites'
+import { buildImageRouteQuery, getPathBasename } from '../utils/galleryRoute'
 import {
   accessCollection,
   collectionThumbUrl,
@@ -268,14 +269,14 @@ function openImage(path: string) {
   const baseIndex = store.collectionListing?.images.findIndex((img) => img.path === path) ?? 0
   router.push({
     path: '/image',
-    query: {
+    query: buildImageRouteQuery({
+      index: baseIndex,
       path,
-      index: String(baseIndex),
       folder: collectionPath.value,
-      collection: String(collectionId.value),
+      collectionId: collectionId.value,
       view: flatMode.value ? 'flat' : 'folder',
-      ...(privacyEnabled.value ? { privacy: '1' } : {})
-    }
+      privacyEnabled: privacyEnabled.value
+    })
   })
 }
 
@@ -287,7 +288,7 @@ function favoritePayload(path: string) {
     item_path: path,
     folder_path: collectionPath.value,
     view_mode: flatMode.value ? 'flat' as const : 'folder' as const,
-    item_name: item?.name || path.split(/[\\/]+/).filter(Boolean).pop() || path,
+    item_name: item?.name || getPathBasename(path),
     collection_token: localStorage.getItem(`collection_token_${collectionId.value}`) || ''
   }
 }

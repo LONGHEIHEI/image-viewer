@@ -43,24 +43,26 @@ import PrivacyRevealButton from '../components/PrivacyRevealButton.vue'
 import ImageBrowserSection from '../components/ImageBrowserSection.vue'
 import { usePrivacyReveal } from '../composables/usePrivacyReveal'
 import { buildFavoriteKey } from '../utils/favorites'
+import {
+  buildImageRouteQuery,
+  getPathBasename,
+  parseCollectionId,
+  parseGalleryView,
+  readQueryString
+} from '../utils/galleryRoute'
 import { archiveThumbUrl, collectionArchiveThumbUrl, getCollectionInfo } from '../api/client'
 
 const store = useGalleryStore()
 const route = useRoute()
 const router = useRouter()
 
-const archive = computed(() => String(route.query.archive || ''))
-const folder = computed(() => String(route.query.folder || ''))
+const archive = computed(() => readQueryString(route.query.archive))
+const folder = computed(() => readQueryString(route.query.folder))
 
-const collectionId = computed(() => {
-  const raw = route.query.collection
-  if (raw === undefined || raw === null || raw === '') return null
-  const num = Number(raw)
-  return Number.isFinite(num) ? num : null
-})
+const collectionId = computed(() => parseCollectionId(route.query.collection))
 
 const isCollection = computed(() => collectionId.value !== null)
-const collectionView = computed(() => String(route.query.view || 'folder'))
+const collectionView = computed(() => parseGalleryView(route.query.view))
 const privacyEnabled = ref(route.query.privacy === '1')
 const privacyStorageKey = computed(() =>
   isCollection.value ? `collection-privacy-${collectionId.value}` : ''
@@ -111,8 +113,7 @@ const privacyToggleTitle = computed(() =>
 
 const archiveLabel = computed(() => {
   if (!archive.value) return ''
-  const parts = archive.value.split(/[\\/]+/).filter(Boolean)
-  return parts[parts.length - 1] || archive.value
+  return getPathBasename(archive.value)
 })
 
 onMounted(async () => {
@@ -148,22 +149,18 @@ async function hydrateCollectionPrivacy() {
 
 function openArchiveImage(file: string) {
   const baseIndex = listing.value?.files.findIndex((item) => item.path === file) ?? 0
-  const query: Record<string, string> = {
-    archive: archive.value,
-    file,
-    index: String(baseIndex)
-  }
-  if (folder.value) {
-    query.folder = folder.value
-  }
-  if (isCollection.value) {
-    query.collection = String(collectionId.value)
-    query.view = collectionView.value
-    if (privacyEnabled.value) {
-      query.privacy = '1'
-    }
-  }
-  router.push({ path: '/image', query })
+  router.push({
+    path: '/image',
+    query: buildImageRouteQuery({
+      index: baseIndex,
+      archive: archive.value,
+      file,
+      folder: folder.value,
+      collectionId: collectionId.value,
+      view: collectionView.value,
+      privacyEnabled: privacyEnabled.value
+    })
+  })
 }
 
 function favoritePayload(filePath: string) {
@@ -175,7 +172,7 @@ function favoritePayload(filePath: string) {
     item_path: filePath,
     folder_path: folder.value,
     view_mode: collectionView.value === 'flat' ? ('flat' as const) : ('folder' as const),
-    item_name: item?.name || filePath.split(/[\\/]+/).filter(Boolean).pop() || filePath,
+    item_name: item?.name || getPathBasename(filePath),
     collection_token: collectionId.value
       ? localStorage.getItem(`collection_token_${collectionId.value}`) || ''
       : ''
