@@ -43,16 +43,16 @@
           v-if="store.listing && store.listing.total_images"
           class="browser-section"
         >
-          <div class="panel-header">
-            <div class="panel-title">图片</div>
-            <div class="meta">
-              共 {{ store.listing.total_images }} 张 · 第 {{ store.listing.page }} 页
-            </div>
-          </div>
-          <ImageGrid :images="store.listing.images" :thumb="thumb" @open-image="openImage" />
-          <div class="load" v-if="store.listing.has_more">
-            <n-button type="primary" :loading="store.loading" @click="loadMore">加载更多</n-button>
-          </div>
+          <ImageBrowserSection
+            :images="store.listing.images"
+            :thumb="thumb"
+            title="图片"
+            :meta-text="`共 ${store.listing.total_images} 张 · 第 ${store.listing.page} 页`"
+            :has-more="store.listing.has_more"
+            :loading="store.loading"
+            @open-image="openImage"
+            @load-more="loadMore"
+          />
         </section>
 
         <div v-if="store.error" class="error">{{ store.error }}</div>
@@ -65,12 +65,11 @@
 <script setup lang="ts">
 import { onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { NButton } from 'naive-ui'
 import { useGalleryStore } from '../store/gallery'
 import FolderGrid from '../components/FolderGrid.vue'
-import ImageGrid from '../components/ImageGrid.vue'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import SidebarTree from '../components/SidebarTree.vue'
+import ImageBrowserSection from '../components/ImageBrowserSection.vue'
 import { folderCoverUrl, archiveCoverUrl, thumbUrl } from '../api/client'
 
 const store = useGalleryStore()

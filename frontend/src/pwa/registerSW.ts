@@ -1,7 +1,19 @@
 ﻿import { registerSW as register } from 'virtual:pwa-register'
+import {
+  markPwaNeedRefresh,
+  markPwaOfflineReady,
+  setPwaUpdateServiceWorker
+} from './updateState'
 
 export function registerSW() {
-  register({
-    immediate: true
+  const updateSW = register({
+    immediate: true,
+    onNeedRefresh() {
+      markPwaNeedRefresh(true)
+    },
+    onOfflineReady() {
+      markPwaOfflineReady(true)
+    }
   })
+  setPwaUpdateServiceWorker(updateSW)
 }

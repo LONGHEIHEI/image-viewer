@@ -73,6 +73,22 @@
           {{ topbarMediaCount }}
         </div>
 
+        <div
+          v-if="showPwaRefreshPrompt"
+          :class="['pwa-update-toast', { 'pwa-update-toast--image': isImageRoute }]"
+          role="status"
+          aria-live="polite"
+        >
+          <div class="pwa-update-copy">
+            <div class="pwa-update-title">发现新版本</div>
+            <div class="pwa-update-text">有新资源可用，刷新后即可更新。</div>
+          </div>
+          <div class="pwa-update-actions">
+            <n-button size="small" quaternary @click="dismissRefreshPrompt">稍后</n-button>
+            <n-button size="small" type="primary" @click="applyUpdate">刷新</n-button>
+          </div>
+        </div>
+
         <n-layout has-sider class="app-shell">
           <n-layout-sider v-if="showSider" class="app-sider" width="220">
             <div class="sider-inner">
@@ -153,6 +169,7 @@ import { computed, h, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from './store/auth'
 import { useGalleryStore } from './store/gallery'
+import { usePwaUpdateState } from './pwa/updateState'
 
 const PWA_SIMULATION_KEY = 'image-views:pwa-simulated'
 const PWA_QUERY_ENABLE_VALUES = new Set(['1', 'true', 'on', 'yes'])
@@ -162,6 +179,7 @@ const auth = useAuthStore()
 const gallery = useGalleryStore()
 const router = useRouter()
 const route = useRoute()
+const { needRefresh, applyUpdate, dismissRefreshPrompt } = usePwaUpdateState()
 const drawerActive = ref(false)
 const isMobile = ref(false)
 const isStandalonePwa = ref(false)
@@ -241,6 +259,7 @@ const showTopbarMediaCount = computed(() => showMobileTopbar.value && Boolean(to
 const showFloatingMediaCount = computed(
   () => useImmersiveMobileChrome.value && Boolean(topbarMediaCount.value)
 )
+const showPwaRefreshPrompt = computed(() => isStandalonePwa.value && needRefresh.value)
 
 function basename(value: string) {
   const parts = value.split(/[\\/]+/).filter(Boolean)
@@ -546,6 +565,50 @@ onBeforeUnmount(() => {
   backdrop-filter: blur(12px);
 }
 
+.pwa-update-toast {
+  position: fixed;
+  right: calc(16px + var(--safe-area-right));
+  bottom: calc(16px + var(--safe-area-bottom));
+  z-index: 35;
+  display: grid;
+  gap: 12px;
+  width: min(360px, calc(100vw - 32px - var(--safe-area-left) - var(--safe-area-right)));
+  padding: 14px 14px 12px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(27, 30, 39, 0.08);
+  box-shadow: 0 18px 36px rgba(20, 25, 35, 0.16);
+  backdrop-filter: blur(16px);
+}
+
+.pwa-update-toast--image {
+  bottom: calc(var(--mobile-viewer-toolbar-space) + 14px + var(--safe-area-bottom));
+}
+
+.pwa-update-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.pwa-update-title {
+  font-family: 'Space Grotesk', Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.pwa-update-text {
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(92, 102, 114, 0.88);
+}
+
+.pwa-update-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .topbar-left {
   display: flex;
   align-items: center;
@@ -738,6 +801,20 @@ onBeforeUnmount(() => {
     right: calc(10px + var(--safe-area-right));
   }
 
+  .pwa-update-toast {
+    left: calc(10px + var(--safe-area-left));
+    right: calc(10px + var(--safe-area-right));
+    bottom: calc(12px + var(--safe-area-bottom));
+    width: auto;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .pwa-update-toast--image {
+    bottom: calc(var(--mobile-viewer-toolbar-space) + 12px + var(--safe-area-bottom));
+  }
+
   .topbar-left {
     min-width: 0;
   }
@@ -757,6 +834,10 @@ onBeforeUnmount(() => {
 
   .user .name {
     font-size: 13px;
+  }
+
+  .pwa-update-actions {
+    width: 100%;
   }
 
   .page-container--image {

@@ -7,15 +7,29 @@
       class="card folder-card"
       @click="handleFolderClick(folder.path)"
     >
-      <div :class="['thumb', { 'thumb--private': privacyEnabled && !isRevealed(`folder:${folder.path}`) }]" v-if="folderThumb">
-        <div class="thumb-placeholder" aria-hidden="true"></div>
+      <div
+        :class="[
+          'thumb',
+          {
+            'thumb--private': privacyEnabled && !isRevealed(`folder:${folder.path}`),
+            'thumb--ready': getThumbState(`folder:${folder.path}`) === 'ready',
+            'thumb--failed': getThumbState(`folder:${folder.path}`) === 'failed'
+          }
+        ]"
+        v-if="folderThumb"
+      >
+        <div
+          v-if="getThumbState(`folder:${folder.path}`) !== 'ready'"
+          class="thumb-placeholder"
+          aria-hidden="true"
+        ></div>
         <img
           :src="folderThumb(folder.path)"
           :alt="folder.name"
           loading="lazy"
           decoding="async"
-          @load="onThumbLoad"
-          @error="onThumbError"
+          @load="onThumbLoad(`folder:${folder.path}`)"
+          @error="onThumbError(`folder:${folder.path}`)"
         />
         <div class="thumb-fallback">目录</div>
         <div v-if="privacyEnabled && !isRevealed(`folder:${folder.path}`)" class="privacy-mask"></div>
@@ -32,15 +46,29 @@
       class="card folder-card"
       @click="handleArchiveClick(archive.path)"
     >
-      <div :class="['thumb', { 'thumb--private': privacyEnabled && !isRevealed(`archive:${archive.path}`) }]" v-if="archiveThumb">
-        <div class="thumb-placeholder" aria-hidden="true"></div>
+      <div
+        :class="[
+          'thumb',
+          {
+            'thumb--private': privacyEnabled && !isRevealed(`archive:${archive.path}`),
+            'thumb--ready': getThumbState(`archive:${archive.path}`) === 'ready',
+            'thumb--failed': getThumbState(`archive:${archive.path}`) === 'failed'
+          }
+        ]"
+        v-if="archiveThumb"
+      >
+        <div
+          v-if="getThumbState(`archive:${archive.path}`) !== 'ready'"
+          class="thumb-placeholder"
+          aria-hidden="true"
+        ></div>
         <img
           :src="archiveThumb(archive.path)"
           :alt="archive.name"
           loading="lazy"
           decoding="async"
-          @load="onThumbLoad"
-          @error="onThumbError"
+          @load="onThumbLoad(`archive:${archive.path}`)"
+          @error="onThumbError(`archive:${archive.path}`)"
         />
         <div class="thumb-fallback">压缩包</div>
         <div v-if="privacyEnabled && !isRevealed(`archive:${archive.path}`)" class="privacy-mask"></div>
@@ -55,7 +83,7 @@
 
 <script setup lang="ts">
 import type { FolderItem } from '../api/client'
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { usePrivacyReveal } from '../composables/usePrivacyReveal'
 
 const props = defineProps<{
@@ -76,6 +104,7 @@ const emit = defineEmits<{
 const revealStorageKey = computed(() => props.privacyStorageKey || '')
 const privacyEnabled = computed(() => Boolean(props.privacyEnabled))
 const { isRevealed, reveal } = usePrivacyReveal(revealStorageKey)
+const thumbStates = ref<Record<string, 'loading' | 'ready' | 'failed'>>({})
 const gridStyle = computed(() => {
   const desktopMinWidth = Math.max(160, props.cardMinWidth ?? 210)
   const mobileMinWidth = Math.max(148, Math.min(desktopMinWidth, 176))
@@ -101,17 +130,46 @@ function handleArchiveClick(path: string) {
   emit('open-archive', path)
 }
 
-function onThumbError(event: Event) {
-  const target = event.target as HTMLImageElement | null
-  if (!target) return
-  target.classList.add('hidden')
-  target.closest('.thumb')?.classList.add('thumb--failed')
+function getThumbState(key: string) {
+  return thumbStates.value[key] ?? 'loading'
 }
 
-function onThumbLoad(event: Event) {
-  const target = event.target as HTMLImageElement | null
-  target?.closest('.thumb')?.classList.add('thumb--ready')
+function updateThumbState(key: string, state: 'loading' | 'ready' | 'failed') {
+  if (thumbStates.value[key] === state) return
+  thumbStates.value = {
+    ...thumbStates.value,
+    [key]: state
+  }
 }
+
+function syncThumbStates() {
+  const nextStates: Record<string, 'loading' | 'ready' | 'failed'> = {}
+  for (const folder of props.folders) {
+    const key = `folder:${folder.path}`
+    nextStates[key] = thumbStates.value[key] ?? 'loading'
+  }
+  for (const archive of props.archives) {
+    const key = `archive:${archive.path}`
+    nextStates[key] = thumbStates.value[key] ?? 'loading'
+  }
+  thumbStates.value = nextStates
+}
+
+function onThumbError(key: string) {
+  updateThumbState(key, 'failed')
+}
+
+function onThumbLoad(key: string) {
+  updateThumbState(key, 'ready')
+}
+
+watch(
+  () => [props.folders, props.archives],
+  () => {
+    syncThumbStates()
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped>
@@ -164,22 +222,21 @@ function onThumbLoad(event: Event) {
 .thumb-placeholder {
   position: absolute;
   inset: 0;
+  z-index: 0;
   background: var(--placeholder-surface);
   opacity: 1;
   transition: opacity 0.2s ease;
 }
 
 .thumb img {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
   opacity: 0;
   transition: opacity 0.2s ease;
-}
-
-.thumb img.hidden {
-  display: none;
 }
 
 .thumb--ready img {
@@ -194,6 +251,7 @@ function onThumbLoad(event: Event) {
 .thumb-fallback {
   position: absolute;
   inset: 0;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -202,9 +260,18 @@ function onThumbLoad(event: Event) {
   text-transform: uppercase;
   color: var(--accent-2);
   font-weight: 700;
+  opacity: 0;
 }
 
-.thumb img:not(.hidden) ~ .thumb-fallback {
+.thumb--failed .thumb-fallback {
+  opacity: 1;
+}
+
+.thumb--ready .thumb-fallback {
+  opacity: 0;
+}
+
+.thumb--failed img {
   opacity: 0;
 }
 

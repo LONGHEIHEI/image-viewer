@@ -43,17 +43,19 @@
         )
       "
     >
-      <ImageGrid
-        v-if="store.collectionListing.images.length"
+      <ImageBrowserSection
         :images="store.collectionListing.images"
         :thumb="thumb"
+        title="图片"
+        :meta-text="store.collectionListing.total_images ? `共 ${store.collectionListing.total_images} 张 · 第 ${store.collectionListing.page} 页` : ''"
+        :show-empty-state="store.collectionListing.total_images > 0 || store.collectionListing.has_more"
+        :has-more="store.collectionListing.has_more"
+        :loading="store.loading"
         :privacy-enabled="privacyEnabled"
         :privacy-storage-key="privacyStorageKey"
         @open-image="openImage"
+        @load-more="loadMore"
       />
-      <div class="load" v-if="store.collectionListing.has_more">
-        <n-button type="primary" :loading="store.loading" @click="loadMore">加载更多</n-button>
-      </div>
     </div>
 
     <div v-if="store.error" class="error">{{ store.error }}</div>
@@ -87,8 +89,8 @@ import {
 } from 'naive-ui'
 import { useGalleryStore } from '../store/gallery'
 import FolderGrid from '../components/FolderGrid.vue'
-import ImageGrid from '../components/ImageGrid.vue'
 import PrivacyRevealButton from '../components/PrivacyRevealButton.vue'
+import ImageBrowserSection from '../components/ImageBrowserSection.vue'
 import { usePrivacyReveal } from '../composables/usePrivacyReveal'
 import {
   accessCollection,

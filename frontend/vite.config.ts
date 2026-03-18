@@ -6,7 +6,9 @@ export default defineConfig({
   plugins: [
     vue(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // Keep the new service worker waiting so the app can surface
+      // an explicit refresh action instead of silently swapping assets.
+      registerType: 'prompt',
       includeAssets: [
         'icon.png'
       ],
