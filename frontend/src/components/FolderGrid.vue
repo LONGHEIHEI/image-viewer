@@ -24,6 +24,7 @@
           aria-hidden="true"
         ></div>
         <img
+          :ref="(el) => setThumbImageRef(el, `folder:${folder.path}`)"
           :src="folderThumb(folder.path)"
           :alt="folder.name"
           loading="lazy"
@@ -63,6 +64,7 @@
           aria-hidden="true"
         ></div>
         <img
+          :ref="(el) => setThumbImageRef(el, `archive:${archive.path}`)"
           :src="archiveThumb(archive.path)"
           :alt="archive.name"
           loading="lazy"
@@ -155,6 +157,20 @@ function syncThumbStates() {
   thumbStates.value = nextStates
 }
 
+function setThumbImageRef(element: Element | null, key: string) {
+  if (!(element instanceof HTMLImageElement)) {
+    return
+  }
+  if (!element.complete) {
+    return
+  }
+  if (element.naturalWidth > 0 && element.naturalHeight > 0) {
+    onThumbLoad(key)
+    return
+  }
+  onThumbError(key)
+}
+
 function onThumbError(key: string) {
   updateThumbState(key, 'failed')
 }
@@ -236,7 +252,8 @@ watch(
   object-fit: cover;
   display: block;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s ease, filter 0.18s ease;
+  will-change: opacity, filter;
 }
 
 .thumb--ready img {
@@ -277,7 +294,6 @@ watch(
 
 .thumb--private img {
   filter: blur(22px) saturate(0.7);
-  transform: scale(1.04);
 }
 
 .privacy-mask {

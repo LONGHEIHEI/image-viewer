@@ -381,7 +381,8 @@ function fileExt(name?: string) {
   width: 100%;
   display: block;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s ease, filter 0.18s ease;
+  will-change: opacity, filter;
 }
 
 .thumb--ready img {
@@ -395,7 +396,6 @@ function fileExt(name?: string) {
 
 .thumb--private img {
   filter: blur(22px) saturate(0.72);
-  transform: scale(1.05);
 }
 
 .privacy-mask {

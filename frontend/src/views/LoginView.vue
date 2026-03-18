@@ -1,6 +1,17 @@
 <template>
   <div class="login">
-    <n-card class="panel card" title="登录" :bordered="false">
+    <n-card class="panel card" :bordered="false">
+      <div class="brand-header">
+        <div class="brand-mark" aria-hidden="true">IV</div>
+        <div class="brand-copy">
+          <div class="brand-name">轻图</div>
+          <div class="brand-subtitle">轻量图片浏览器</div>
+        </div>
+      </div>
+      <div class="form-heading">
+        <div class="form-title">登录</div>
+        <div class="form-caption">登录后即可浏览图集、目录与压缩包内容</div>
+      </div>
       <n-form>
         <n-form-item label="用户名">
           <n-input v-model:value="username" placeholder="请输入用户名" />
@@ -88,6 +99,70 @@ onBeforeUnmount(() => {
   border-radius: var(--radius-lg);
 }
 
+.brand-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.brand-mark {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: linear-gradient(140deg, var(--accent), #ffb84a);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-family: 'Space Grotesk', Arial, sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  box-shadow: 0 14px 28px rgba(255, 106, 61, 0.26);
+}
+
+.brand-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.brand-name {
+  font-family: 'Space Grotesk', Arial, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.brand-subtitle {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: rgba(92, 102, 114, 0.78);
+  text-transform: uppercase;
+}
+
+.form-heading {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.form-title {
+  font-family: 'Space Grotesk', Arial, sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+.form-caption {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
 .actions {
   display: flex;
 }
@@ -105,6 +180,25 @@ onBeforeUnmount(() => {
 
   .card {
     min-width: 0;
+  }
+
+  .brand-header {
+    margin-bottom: 16px;
+  }
+
+  .brand-mark {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    font-size: 18px;
+  }
+
+  .brand-name {
+    font-size: 20px;
+  }
+
+  .form-title {
+    font-size: 18px;
   }
 }
 </style>
