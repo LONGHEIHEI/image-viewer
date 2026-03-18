@@ -9,7 +9,6 @@
         />
       </div>
       <div class="browser-mobile-bar">
-        <div v-if="archiveLabel" class="browser-mobile-caption">{{ archiveLabel }}</div>
         <n-input
           v-model:value="searchTerm"
           class="panel-search panel-search--mobile"
@@ -321,15 +320,7 @@ function thumb(filePath: string) {
 
   .browser-mobile-bar {
     display: grid;
-    gap: 8px;
-  }
-
-  .browser-mobile-caption {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--muted);
-    line-height: 1.3;
-    word-break: break-word;
+    gap: 0;
   }
 
   .browser-header,

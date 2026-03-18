@@ -18,20 +18,22 @@
             'thumb',
             {
               'thumb--private': privacyEnabled && !isRevealed(`image:${image.path}`),
-              'thumb--sized': hasImageSize(image)
+              'thumb--sized': hasImageSize(image),
+              'thumb--ready': getImageState(image.path) === 'ready',
+              'thumb--failed': getImageState(image.path) === 'failed'
             }
           ]"
           :style="getThumbStyle(image)"
           :data-title="image.name"
         >
-          <div class="thumb-placeholder" aria-hidden="true"></div>
+          <div v-if="getImageState(image.path) !== 'ready'" class="thumb-placeholder" aria-hidden="true"></div>
           <img
             :src="thumb(image.path)"
             :alt="image.name"
             loading="lazy"
             decoding="async"
             @load="handleImageLoad($event, image.path)"
-            @error="handleImageError"
+            @error="handleImageError(image.path)"
           />
           <div class="thumb-fallback">加载失败</div>
           <div v-if="privacyEnabled && !isRevealed(`image:${image.path}`)" class="privacy-mask"></div>
@@ -98,6 +100,7 @@ const masonryColumns = ref<FolderItem[][]>([])
 const columnRefs = ref<HTMLElement[]>([])
 // Height sampling is only used for future distribution estimates; it doesn't need to be reactive.
 const imageHeights = new Map<string, number>()
+const imageStates = ref<Record<string, 'loading' | 'ready' | 'failed'>>({})
 let heightSum = 0
 let heightCount = 0
 const revealStorageKey = computed(() => props.privacyStorageKey || '')
@@ -183,6 +186,26 @@ function setColumnRef(element: Element | null, index: number) {
   columnRefs.value.splice(index, 1)
 }
 
+function getImageState(path: string) {
+  return imageStates.value[path] ?? 'loading'
+}
+
+function updateImageState(path: string, state: 'loading' | 'ready' | 'failed') {
+  if (imageStates.value[path] === state) return
+  imageStates.value = {
+    ...imageStates.value,
+    [path]: state
+  }
+}
+
+function syncImageStates(images: FolderItem[]) {
+  const nextStates: Record<string, 'loading' | 'ready' | 'failed'> = {}
+  for (const image of images) {
+    nextStates[image.path] = imageStates.value[image.path] ?? 'loading'
+  }
+  imageStates.value = nextStates
+}
+
 function syncColumnCount() {
   const nextCount = getColumnCount()
   if (nextCount === columnCount.value) return
@@ -192,7 +215,7 @@ function syncColumnCount() {
 function handleImageLoad(event: Event, path: string) {
   const image = event.target as HTMLImageElement | null
   if (!image) return
-  image.closest('.thumb')?.classList.add('thumb--ready')
+  updateImageState(path, 'ready')
   const renderedWidth = image.clientWidth || image.naturalWidth || 1
   const renderedHeight =
     image.clientHeight ||
@@ -207,11 +230,8 @@ function handleImageLoad(event: Event, path: string) {
   heightSum += renderedHeight
 }
 
-function handleImageError(event: Event) {
-  const image = event.target as HTMLImageElement | null
-  if (!image) return
-  image.classList.add('hidden')
-  image.closest('.thumb')?.classList.add('thumb--failed')
+function handleImageError(path: string) {
+  updateImageState(path, 'failed')
 }
 
 function handleTileClick(path: string) {
@@ -225,6 +245,7 @@ function handleTileClick(path: string) {
 watch(
   () => props.images,
   async (images) => {
+    syncImageStates(images)
     const isAppend =
       renderedCount > 0 &&
       images.length > renderedCount &&
@@ -348,20 +369,19 @@ function fileExt(name?: string) {
 .thumb-placeholder {
   position: absolute;
   inset: 0;
+  z-index: 0;
   background: var(--placeholder-surface);
   opacity: 1;
   transition: opacity 0.2s ease;
 }
 
 .thumb img {
+  position: relative;
+  z-index: 1;
   width: 100%;
   display: block;
   opacity: 0;
   transition: opacity 0.2s ease;
-}
-
-.thumb img.hidden {
-  display: none;
 }
 
 .thumb--ready img {
@@ -415,6 +435,7 @@ function fileExt(name?: string) {
 .thumb-fallback {
   position: absolute;
   inset: 0;
+  z-index: 2;
   display: grid;
   place-items: center;
   padding: 12px;
@@ -427,6 +448,10 @@ function fileExt(name?: string) {
 
 .thumb--failed .thumb-fallback {
   opacity: 1;
+}
+
+.thumb--failed img {
+  opacity: 0;
 }
 
 .props {
