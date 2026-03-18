@@ -53,6 +53,9 @@
         :loading="store.loading"
         :privacy-enabled="privacyEnabled"
         :privacy-storage-key="privacyStorageKey"
+        favorite-enabled
+        :is-favorite="isFavorite"
+        :toggle-favorite="toggleFavorite"
         @open-image="openImage"
         @load-more="loadMore"
       />
@@ -92,6 +95,7 @@ import FolderGrid from '../components/FolderGrid.vue'
 import PrivacyRevealButton from '../components/PrivacyRevealButton.vue'
 import ImageBrowserSection from '../components/ImageBrowserSection.vue'
 import { usePrivacyReveal } from '../composables/usePrivacyReveal'
+import { buildFavoriteKey } from '../utils/favorites'
 import {
   accessCollection,
   collectionThumbUrl,
@@ -273,6 +277,27 @@ function openImage(path: string) {
       ...(privacyEnabled.value ? { privacy: '1' } : {})
     }
   })
+}
+
+function favoritePayload(path: string) {
+  const item = store.collectionListing?.images.find((image) => image.path === path)
+  return {
+    source_kind: 'collection_image' as const,
+    collection_id: collectionId.value,
+    item_path: path,
+    folder_path: collectionPath.value,
+    view_mode: flatMode.value ? 'flat' as const : 'folder' as const,
+    item_name: item?.name || path.split(/[\\/]+/).filter(Boolean).pop() || path,
+    collection_token: localStorage.getItem(`collection_token_${collectionId.value}`) || ''
+  }
+}
+
+function isFavorite(path: string) {
+  return store.hasFavorite(buildFavoriteKey(favoritePayload(path)))
+}
+
+async function toggleFavorite(path: string) {
+  await store.toggleFavorite(favoritePayload(path))
 }
 
 function loadMore() {

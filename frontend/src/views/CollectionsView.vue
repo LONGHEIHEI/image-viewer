@@ -2,6 +2,9 @@
   <div class="page">
     <div class="page-header">
       <div class="page-title">图集</div>
+      <div class="page-actions">
+        <n-button size="small" @click="router.push('/favorites')">收藏</n-button>
+      </div>
     </div>
 
     <div class="collections-grid collections-grid--placeholder" v-if="loading">
@@ -47,6 +50,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { NButton } from 'naive-ui'
 import { getCollectionsAvailable, collectionCoverUrl, type CollectionSummary } from '../api/client'
 import { usePrivacyReveal } from '../composables/usePrivacyReveal'
 

@@ -1,14 +1,20 @@
-﻿import { defineStore } from 'pinia'
+import { defineStore } from 'pinia'
 import {
-  getFolder,
+  createFavorite,
+  deleteFavorite,
   getArchive,
-  getTree,
-  getCollectionFolder,
   getCollectionArchive,
-  type FolderListing,
+  getCollectionFolder,
+  getFavorites,
+  getFolder,
+  getTree,
   type ArchiveListing,
+  type FavoriteItem,
+  type FavoritePayload,
+  type FolderListing,
   type TreeNode
 } from '../api/client'
+import { buildFavoriteKey, favoriteToPayload } from '../utils/favorites'
 
 export const useGalleryStore = defineStore('gallery', {
   state: () => ({
@@ -19,6 +25,8 @@ export const useGalleryStore = defineStore('gallery', {
     tree: null as TreeNode | null,
     loading: false,
     treeLoading: false,
+    favoritesLoading: false,
+    favoritesLoaded: false,
     error: '' as string,
     treeError: '' as string,
     collectionId: null as number | null,
@@ -27,7 +35,8 @@ export const useGalleryStore = defineStore('gallery', {
     collectionFolder: '' as string,
     collectionListing: null as FolderListing | null,
     collectionArchivePath: '' as string,
-    collectionArchiveListing: null as ArchiveListing | null
+    collectionArchiveListing: null as ArchiveListing | null,
+    favorites: [] as FavoriteItem[]
   }),
   actions: {
     async loadFolder(path = '', page = 1, pageSize = 20, append = false) {
@@ -139,6 +148,67 @@ export const useGalleryStore = defineStore('gallery', {
       } finally {
         this.loading = false
       }
+    },
+    async loadFavorites(force = false) {
+      if (this.favoritesLoaded && !force) return
+      this.favoritesLoading = true
+      try {
+        this.favorites = await getFavorites()
+        this.favoritesLoaded = true
+      } catch {
+        this.favorites = []
+        this.favoritesLoaded = false
+      } finally {
+        this.favoritesLoading = false
+      }
+    },
+    clearFavorites() {
+      this.favorites = []
+      this.favoritesLoaded = false
+      this.favoritesLoading = false
+    },
+    hasFavorite(key: string) {
+      return this.favorites.some((item) => buildFavoriteKey(item) === key)
+    },
+    async addFavorite(payload: FavoritePayload) {
+      await createFavorite(payload)
+      const item: FavoriteItem = {
+        id: 0,
+        user_id: 0,
+        source_kind: payload.source_kind,
+        collection_id: payload.collection_id ?? null,
+        container_path: payload.container_path || '',
+        item_path: payload.item_path,
+        folder_path: payload.folder_path || '',
+        view_mode: payload.view_mode === 'flat' ? 'flat' : 'folder',
+        item_name: payload.item_name || '',
+        created_at: new Date().toISOString()
+      }
+      const nextKey = buildFavoriteKey(item)
+      this.favorites = [item, ...this.favorites.filter((current) => buildFavoriteKey(current) !== nextKey)]
+      this.favoritesLoaded = true
+    },
+    async removeFavorite(payload: Pick<FavoritePayload, 'source_kind' | 'collection_id' | 'container_path' | 'item_path'>) {
+      await deleteFavorite(payload)
+      const nextKey = buildFavoriteKey({
+        source_kind: payload.source_kind,
+        collection_id: payload.collection_id ?? null,
+        container_path: payload.container_path || '',
+        item_path: payload.item_path
+      })
+      this.favorites = this.favorites.filter((item) => buildFavoriteKey(item) !== nextKey)
+    },
+    async toggleFavorite(payload: FavoritePayload) {
+      const key = buildFavoriteKey(payload)
+      if (this.hasFavorite(key)) {
+        await this.removeFavorite(payload)
+        return false
+      }
+      await this.addFavorite(payload)
+      return true
+    },
+    async removeFavoriteItem(item: FavoriteItem) {
+      await this.removeFavorite(favoriteToPayload(item))
     }
   }
 })

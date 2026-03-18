@@ -1,6 +1,10 @@
-﻿export type FolderItem = {
+export type FolderItem = {
   name: string
   path: string
+  width?: number
+  height?: number
+  display_path?: string
+  favorite_key?: string
 }
 
 export type FolderListing = {
@@ -67,6 +71,36 @@ export type FsList = {
   path: string
   parent: string
   folders: FolderItem[]
+}
+
+export type FavoriteSourceKind =
+  | 'image'
+  | 'archive_image'
+  | 'collection_image'
+  | 'collection_archive_image'
+
+export type FavoritePayload = {
+  source_kind: FavoriteSourceKind
+  collection_id?: number | null
+  container_path?: string
+  item_path: string
+  folder_path?: string
+  view_mode?: 'folder' | 'flat'
+  item_name?: string
+  collection_token?: string
+}
+
+export type FavoriteItem = {
+  id: number
+  user_id: number
+  source_kind: FavoriteSourceKind
+  collection_id?: number | null
+  container_path: string
+  item_path: string
+  folder_path: string
+  view_mode: 'folder' | 'flat'
+  item_name: string
+  created_at: string
 }
 
 import { clearLocalCache, readLocalCache, writeLocalCache } from '../utils/localCache'
@@ -346,6 +380,26 @@ export async function getCollectionArchive(
 export async function getCollectionTree(collectionId: number, depth = 2): Promise<TreeNode> {
   const url = `${API_BASE}/collections/${collectionId}/tree?depth=${depth}${collectionTokenQuery(collectionId)}`
   return requestJsonWithCache(url, {}, { ttlMs: TREE_CACHE_TTL })
+}
+
+export async function getFavorites(): Promise<FavoriteItem[]> {
+  return requestJson(`${API_BASE}/favorites`)
+}
+
+export async function createFavorite(payload: FavoritePayload) {
+  return requestJson(`${API_BASE}/favorites`, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+}
+
+export async function deleteFavorite(
+  payload: Pick<FavoritePayload, 'source_kind' | 'collection_id' | 'container_path' | 'item_path'>
+) {
+  return requestJson(`${API_BASE}/favorites`, {
+    method: 'DELETE',
+    body: JSON.stringify(payload)
+  })
 }
 
 export function folderCoverUrl(path: string): string {

@@ -274,15 +274,19 @@ const currentMobileTitle = computed(() => {
   }
   if (route.path === '/image') return ''
   if (route.path.startsWith('/collection/')) return gallery.collectionName || '图集'
+  if (route.path === '/favorites') return '收藏'
   if (route.path === '/settings') return '设置'
   if (route.path === '/collections') return '图集'
   return '图库'
 })
 
-function renderMenuIcon(type: 'library' | 'collections' | 'settings') {
+function renderMenuIcon(type: 'library' | 'collections' | 'favorites' | 'settings') {
   const paths: Record<string, string[]> = {
     library: ['M4 5h16v5H4z', 'M4 14h16v5H4z'],
     collections: ['M6 4h12v4H6z', 'M5 10h14v10H5z'],
+    favorites: [
+      'M12 3.8l2.5 5.07l5.6.81l-4.05 3.95l.96 5.57L12 16.6l-5.01 2.6l.96-5.57L3.9 9.68l5.6-.81L12 3.8z'
+    ],
     settings: [
       'M12 8a4 4 0 1 1 0 8a4 4 0 0 1 0-8z',
       'M3 12h2',
@@ -325,7 +329,10 @@ function renderMenuIcon(type: 'library' | 'collections' | 'settings') {
 }
 
 const menuOptions = computed(() => {
-  const base = [{ label: '图集', key: '/collections', icon: renderMenuIcon('collections') }]
+  const base = [
+    { label: '图集', key: '/collections', icon: renderMenuIcon('collections') },
+    { label: '收藏', key: '/favorites', icon: renderMenuIcon('favorites') }
+  ]
   if (auth.user?.is_admin) {
     base.push({ label: '设置', key: '/settings', icon: renderMenuIcon('settings') })
   }
@@ -334,6 +341,7 @@ const menuOptions = computed(() => {
 
 const activeMenu = computed(() => {
   if (route.path.startsWith('/settings')) return '/settings'
+  if (route.path.startsWith('/favorites')) return '/favorites'
   return '/collections'
 })
 
@@ -449,6 +457,18 @@ watch(
 watch([isStandalonePwa, actualStandalonePwa], () => {
   syncDocumentPwaMode()
 })
+
+watch(
+  () => auth.token,
+  (token) => {
+    if (token) {
+      gallery.loadFavorites()
+      return
+    }
+    gallery.clearFavorites()
+  },
+  { immediate: true }
+)
 
 onMounted(() => {
   if (typeof window === 'undefined') return

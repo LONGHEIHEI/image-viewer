@@ -50,6 +50,9 @@
             :meta-text="`共 ${store.listing.total_images} 张 · 第 ${store.listing.page} 页`"
             :has-more="store.listing.has_more"
             :loading="store.loading"
+            favorite-enabled
+            :is-favorite="isFavorite"
+            :toggle-favorite="toggleFavorite"
             @open-image="openImage"
             @load-more="loadMore"
           />
@@ -71,6 +74,7 @@ import Breadcrumbs from '../components/Breadcrumbs.vue'
 import SidebarTree from '../components/SidebarTree.vue'
 import ImageBrowserSection from '../components/ImageBrowserSection.vue'
 import { folderCoverUrl, archiveCoverUrl, thumbUrl } from '../api/client'
+import { buildFavoriteKey } from '../utils/favorites'
 
 const store = useGalleryStore()
 const route = useRoute()
@@ -108,6 +112,25 @@ function openImage(path: string) {
   const folder = store.currentFolder
   const baseIndex = store.listing?.images.findIndex((img) => img.path === path) ?? 0
   router.push({ path: '/image', query: { path, index: String(baseIndex), folder } })
+}
+
+function favoritePayload(path: string) {
+  const item = store.listing?.images.find((image) => image.path === path)
+  return {
+    source_kind: 'image' as const,
+    item_path: path,
+    folder_path: store.currentFolder,
+    view_mode: 'folder' as const,
+    item_name: item?.name || path.split(/[\\/]+/).filter(Boolean).pop() || path
+  }
+}
+
+function isFavorite(path: string) {
+  return store.hasFavorite(buildFavoriteKey(favoritePayload(path)))
+}
+
+async function toggleFavorite(path: string) {
+  await store.toggleFavorite(favoritePayload(path))
 }
 
 function loadMore() {

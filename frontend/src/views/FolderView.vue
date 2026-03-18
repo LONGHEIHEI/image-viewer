@@ -21,6 +21,9 @@
         :loading="store.loading"
         :privacy-enabled="privacyEnabled"
         :privacy-storage-key="privacyStorageKey"
+        favorite-enabled
+        :is-favorite="isFavorite"
+        :toggle-favorite="toggleFavorite"
         @open-image="openArchiveImage"
         @back="goBack"
         @load-more="loadMore"
@@ -39,6 +42,7 @@ import { useGalleryStore } from '../store/gallery'
 import PrivacyRevealButton from '../components/PrivacyRevealButton.vue'
 import ImageBrowserSection from '../components/ImageBrowserSection.vue'
 import { usePrivacyReveal } from '../composables/usePrivacyReveal'
+import { buildFavoriteKey } from '../utils/favorites'
 import { archiveThumbUrl, collectionArchiveThumbUrl, getCollectionInfo } from '../api/client'
 
 const store = useGalleryStore()
@@ -160,6 +164,30 @@ function openArchiveImage(file: string) {
     }
   }
   router.push({ path: '/image', query })
+}
+
+function favoritePayload(filePath: string) {
+  const item = listing.value?.files.find((entry) => entry.path === filePath)
+  return {
+    source_kind: isCollection.value ? ('collection_archive_image' as const) : ('archive_image' as const),
+    collection_id: collectionId.value,
+    container_path: archive.value,
+    item_path: filePath,
+    folder_path: folder.value,
+    view_mode: collectionView.value === 'flat' ? ('flat' as const) : ('folder' as const),
+    item_name: item?.name || filePath.split(/[\\/]+/).filter(Boolean).pop() || filePath,
+    collection_token: collectionId.value
+      ? localStorage.getItem(`collection_token_${collectionId.value}`) || ''
+      : ''
+  }
+}
+
+function isFavorite(filePath: string) {
+  return store.hasFavorite(buildFavoriteKey(favoritePayload(filePath)))
+}
+
+async function toggleFavorite(filePath: string) {
+  await store.toggleFavorite(favoritePayload(filePath))
 }
 
 function goBack() {

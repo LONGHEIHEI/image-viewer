@@ -15,6 +15,9 @@
       :thumb="thumb"
       :privacy-enabled="privacyEnabled"
       :privacy-storage-key="privacyStorageKey"
+      :favorite-enabled="favoriteEnabled"
+      :is-favorite="isFavorite"
+      :toggle-favorite="toggleFavorite"
       @open-image="(path) => emit('open-image', path)"
     />
     <div v-else-if="showEmptyState" class="empty">{{ emptyText }}</div>
@@ -48,6 +51,9 @@ const props = withDefaults(
     showEmptyState?: boolean
     privacyEnabled?: boolean
     privacyStorageKey?: string
+    favoriteEnabled?: boolean
+    isFavorite?: (path: string) => boolean
+    toggleFavorite?: (path: string) => void | Promise<void>
   }>(),
   {
     title: '',
@@ -62,7 +68,10 @@ const props = withDefaults(
     emptyText: '暂无图片',
     showEmptyState: false,
     privacyEnabled: false,
-    privacyStorageKey: ''
+    privacyStorageKey: '',
+    favoriteEnabled: false,
+    isFavorite: undefined,
+    toggleFavorite: undefined
   }
 )
 

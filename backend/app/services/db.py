@@ -53,6 +53,23 @@ def init_db():
             )
             '''
         )
+        conn.execute(
+            '''
+            CREATE TABLE IF NOT EXISTS favorites (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                source_kind TEXT NOT NULL,
+                collection_id INTEGER NOT NULL DEFAULT 0,
+                container_path TEXT NOT NULL DEFAULT '',
+                item_path TEXT NOT NULL,
+                folder_path TEXT NOT NULL DEFAULT '',
+                view_mode TEXT NOT NULL DEFAULT 'folder',
+                item_name TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL,
+                UNIQUE(user_id, source_kind, collection_id, container_path, item_path)
+            )
+            '''
+        )
         if not _column_exists(conn, 'collections', 'cover_path'):
             conn.execute('ALTER TABLE collections ADD COLUMN cover_path TEXT')
         if not _column_exists(conn, 'collections', 'aggregate_subdirs'):
@@ -84,6 +101,21 @@ def row_to_collection(row: sqlite3.Row) -> dict:
         'cover_path': row['cover_path'],
         'aggregate_subdirs': bool(row['aggregate_subdirs']),
         'privacy_enabled': bool(row['privacy_enabled']),
+        'created_at': row['created_at']
+    }
+
+
+def row_to_favorite(row: sqlite3.Row) -> dict:
+    return {
+        'id': row['id'],
+        'user_id': row['user_id'],
+        'source_kind': row['source_kind'],
+        'collection_id': row['collection_id'] or None,
+        'container_path': row['container_path'] or '',
+        'item_path': row['item_path'],
+        'folder_path': row['folder_path'] or '',
+        'view_mode': row['view_mode'] or 'folder',
+        'item_name': row['item_name'] or '',
         'created_at': row['created_at']
     }
 
@@ -164,6 +196,7 @@ def update_user(user_id: int, *, password_hash: str | None = None, is_admin: boo
 def delete_user(user_id: int):
     conn = get_connection()
     try:
+        conn.execute('DELETE FROM favorites WHERE user_id = ?', (user_id,))
         conn.execute('DELETE FROM users WHERE id = ?', (user_id,))
         conn.commit()
     finally:
@@ -277,7 +310,102 @@ def update_collection(
 def delete_collection(collection_id: int):
     conn = get_connection()
     try:
+        conn.execute('DELETE FROM favorites WHERE collection_id = ?', (collection_id,))
         conn.execute('DELETE FROM collections WHERE id = ?', (collection_id,))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def list_favorites(user_id: int):
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            '''
+            SELECT * FROM favorites
+            WHERE user_id = ?
+            ORDER BY datetime(created_at) DESC, id DESC
+            ''',
+            (user_id,)
+        ).fetchall()
+        return [row_to_favorite(row) for row in rows]
+    finally:
+        conn.close()
+
+
+def save_favorite(
+    user_id: int,
+    *,
+    source_kind: str,
+    collection_id: int | None,
+    container_path: str,
+    item_path: str,
+    folder_path: str,
+    view_mode: str,
+    item_name: str
+):
+    conn = get_connection()
+    try:
+        timestamp = datetime.utcnow().isoformat()
+        conn.execute(
+            '''
+            INSERT INTO favorites (
+                user_id,
+                source_kind,
+                collection_id,
+                container_path,
+                item_path,
+                folder_path,
+                view_mode,
+                item_name,
+                created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(user_id, source_kind, collection_id, container_path, item_path)
+            DO UPDATE SET
+                folder_path = excluded.folder_path,
+                view_mode = excluded.view_mode,
+                item_name = excluded.item_name,
+                created_at = excluded.created_at
+            ''',
+            (
+                user_id,
+                source_kind,
+                collection_id or 0,
+                container_path,
+                item_path,
+                folder_path,
+                view_mode,
+                item_name,
+                timestamp
+            )
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def delete_favorite(
+    user_id: int,
+    *,
+    source_kind: str,
+    collection_id: int | None,
+    container_path: str,
+    item_path: str
+):
+    conn = get_connection()
+    try:
+        conn.execute(
+            '''
+            DELETE FROM favorites
+            WHERE user_id = ?
+              AND source_kind = ?
+              AND collection_id = ?
+              AND container_path = ?
+              AND item_path = ?
+            ''',
+            (user_id, source_kind, collection_id or 0, container_path, item_path)
+        )
         conn.commit()
     finally:
         conn.close()
