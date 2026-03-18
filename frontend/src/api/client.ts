@@ -69,10 +69,39 @@ export type FsList = {
   folders: FolderItem[]
 }
 
+import { clearLocalCache, readLocalCache, writeLocalCache } from '../utils/localCache'
+
 const API_BASE = '/api'
+const TREE_CACHE_TTL = 5 * 60 * 1000
+const BROWSE_CACHE_TTL = 2 * 60 * 1000
+const COLLECTIONS_CACHE_TTL = 2 * 60 * 1000
+
+class ApiError extends Error {
+  status: number
+
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+  }
+}
 
 function getToken() {
   return localStorage.getItem('token') || ''
+}
+
+function hashString(value: string) {
+  let hash = 2166136261
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index)
+    hash +=
+      (hash << 1) +
+      (hash << 4) +
+      (hash << 7) +
+      (hash << 8) +
+      (hash << 24)
+  }
+  return (hash >>> 0).toString(36)
 }
 
 function tokenQuery() {
@@ -97,25 +126,61 @@ function collectionTokenQuery(collectionId: number | string) {
   return token ? `&ct=${encodeURIComponent(token)}` : ''
 }
 
-async function requestJson(url: string, options: RequestInit = {}) {
+function buildCacheKey(url: string) {
+  const token = getToken()
+  return `json:${hashString(token || 'guest')}::${url}`
+}
+
+async function requestJson<T = any>(url: string, options: RequestInit = {}): Promise<T> {
+  return requestJsonWithCache<T>(url, options)
+}
+
+async function requestJsonWithCache<T = any>(
+  url: string,
+  options: RequestInit = {},
+  cache?: { ttlMs: number }
+): Promise<T> {
   const token = getToken()
   const headers = new Headers(options.headers || {})
+  const method = (options.method || 'GET').toUpperCase()
+  const cacheKey = method === 'GET' && cache ? buildCacheKey(url) : ''
+  if (cacheKey) {
+    const cached = readLocalCache<T>(cacheKey)
+    if (cached && !cached.isExpired) {
+      return cached.value
+    }
+  }
   headers.set('Content-Type', 'application/json')
   if (token) headers.set('Authorization', `Bearer ${token}`)
-  const res = await fetch(url, { ...options, headers })
-  if (!res.ok) {
-    const text = await res.text()
-    try {
-      const data = JSON.parse(text)
-      if (data && typeof data.detail === 'string') {
-        throw new Error(data.detail)
+  try {
+    const res = await fetch(url, { ...options, headers })
+    if (!res.ok) {
+      const text = await res.text()
+      let message = text || '请求失败'
+      try {
+        const data = JSON.parse(text)
+        if (data && typeof data.detail === 'string') {
+          message = data.detail
+        }
+      } catch {
+        // ignore parse errors
       }
-    } catch {
-      // ignore parse errors
+      throw new ApiError(message, res.status)
     }
-    throw new Error(text || '请求失败')
+    const data = (await res.json()) as T
+    if (cacheKey && cache) {
+      writeLocalCache(cacheKey, data, cache.ttlMs)
+    }
+    return data
+  } catch (error) {
+    if (cacheKey && (!(error instanceof ApiError) || error.status >= 500)) {
+      const fallback = readLocalCache<T>(cacheKey, true)
+      if (fallback) {
+        return fallback.value
+      }
+    }
+    throw error
   }
-  return res.json()
 }
 
 export async function login(username: string, password: string) {
@@ -131,17 +196,17 @@ export async function getMe(): Promise<UserInfo> {
 
 export async function getTree(root = '', depth = 2): Promise<TreeNode> {
   const url = `${API_BASE}/tree?root=${encodeURIComponent(root)}&depth=${depth}`
-  return requestJson(url)
+  return requestJsonWithCache(url, {}, { ttlMs: TREE_CACHE_TTL })
 }
 
 export async function getFolder(path = '', page = 1, pageSize = 60): Promise<FolderListing> {
   const url = `${API_BASE}/folder?path=${encodeURIComponent(path)}&page=${page}&page_size=${pageSize}`
-  return requestJson(url)
+  return requestJsonWithCache(url, {}, { ttlMs: BROWSE_CACHE_TTL })
 }
 
 export async function getArchive(path: string, page = 1, pageSize = 80): Promise<ArchiveListing> {
   const url = `${API_BASE}/archive?path=${encodeURIComponent(path)}&page=${page}&page_size=${pageSize}`
-  return requestJson(url)
+  return requestJsonWithCache(url, {}, { ttlMs: BROWSE_CACHE_TTL })
 }
 
 export async function listUsers(): Promise<UserInfo[]> {
@@ -154,10 +219,12 @@ export async function createUser(payload: {
   is_admin: boolean
   allowed_paths: string[]
 }) {
-  return requestJson(`${API_BASE}/users`, {
+  const data = await requestJson(`${API_BASE}/users`, {
     method: 'POST',
     body: JSON.stringify(payload)
   })
+  clearLocalCache()
+  return data
 }
 
 export async function updateUser(userId: number, payload: {
@@ -165,20 +232,24 @@ export async function updateUser(userId: number, payload: {
   is_admin?: boolean
   allowed_paths?: string[]
 }) {
-  return requestJson(`${API_BASE}/users/${userId}`, {
+  const data = await requestJson(`${API_BASE}/users/${userId}`, {
     method: 'PUT',
     body: JSON.stringify(payload)
   })
+  clearLocalCache()
+  return data
 }
 
 export async function deleteUser(userId: number) {
-  return requestJson(`${API_BASE}/users/${userId}`, {
+  const data = await requestJson(`${API_BASE}/users/${userId}`, {
     method: 'DELETE'
   })
+  clearLocalCache()
+  return data
 }
 
 export async function getCollectionsAvailable(): Promise<CollectionSummary[]> {
-  return requestJson(`${API_BASE}/collections/available`)
+  return requestJsonWithCache(`${API_BASE}/collections/available`, {}, { ttlMs: COLLECTIONS_CACHE_TTL })
 }
 
 export async function getCollectionsAdmin(): Promise<CollectionAdmin[]> {
@@ -195,7 +266,7 @@ export async function listFs(path: string): Promise<FsList> {
 }
 
 export async function getCollectionInfo(collectionId: number): Promise<CollectionSummary> {
-  return requestJson(`${API_BASE}/collections/${collectionId}`)
+  return requestJsonWithCache(`${API_BASE}/collections/${collectionId}`, {}, { ttlMs: COLLECTIONS_CACHE_TTL })
 }
 
 export async function createCollection(payload: {
@@ -206,10 +277,12 @@ export async function createCollection(payload: {
   aggregate_subdirs?: boolean
   privacy_enabled?: boolean
 }) {
-  return requestJson(`${API_BASE}/collections`, {
+  const data = await requestJson(`${API_BASE}/collections`, {
     method: 'POST',
     body: JSON.stringify(payload)
   })
+  clearLocalCache()
+  return data
 }
 
 export async function updateCollection(
@@ -225,16 +298,20 @@ export async function updateCollection(
     privacy_enabled?: boolean
   }
 ) {
-  return requestJson(`${API_BASE}/collections/${collectionId}`, {
+  const data = await requestJson(`${API_BASE}/collections/${collectionId}`, {
     method: 'PUT',
     body: JSON.stringify(payload)
   })
+  clearLocalCache()
+  return data
 }
 
 export async function deleteCollection(collectionId: number) {
-  return requestJson(`${API_BASE}/collections/${collectionId}`, {
+  const data = await requestJson(`${API_BASE}/collections/${collectionId}`, {
     method: 'DELETE'
   })
+  clearLocalCache()
+  return data
 }
 
 export async function accessCollection(collectionId: number, password?: string) {
@@ -253,7 +330,7 @@ export async function getCollectionFolder(
 ): Promise<FolderListing> {
   const viewQuery = view === 'flat' ? '&view=flat' : ''
   const url = `${API_BASE}/collections/${collectionId}/folder?path=${encodeURIComponent(path)}&page=${page}&page_size=${pageSize}${viewQuery}${collectionTokenQuery(collectionId)}`
-  return requestJson(url)
+  return requestJsonWithCache(url, {}, { ttlMs: BROWSE_CACHE_TTL })
 }
 
 export async function getCollectionArchive(
@@ -263,12 +340,12 @@ export async function getCollectionArchive(
   pageSize = 80
 ): Promise<ArchiveListing> {
   const url = `${API_BASE}/collections/${collectionId}/archive?path=${encodeURIComponent(path)}&page=${page}&page_size=${pageSize}${collectionTokenQuery(collectionId)}`
-  return requestJson(url)
+  return requestJsonWithCache(url, {}, { ttlMs: BROWSE_CACHE_TTL })
 }
 
 export async function getCollectionTree(collectionId: number, depth = 2): Promise<TreeNode> {
   const url = `${API_BASE}/collections/${collectionId}/tree?depth=${depth}${collectionTokenQuery(collectionId)}`
-  return requestJson(url)
+  return requestJsonWithCache(url, {}, { ttlMs: TREE_CACHE_TTL })
 }
 
 export function folderCoverUrl(path: string): string {

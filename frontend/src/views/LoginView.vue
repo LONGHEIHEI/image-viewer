@@ -8,12 +8,23 @@
           <div class="brand-subtitle">轻量图片浏览器</div>
         </div>
       </div>
-      <n-form>
+      <n-form @submit.prevent="submit">
         <n-form-item label="用户名">
-          <n-input v-model:value="username" placeholder="请输入用户名" />
+          <n-input
+            v-model:value="username"
+            placeholder="请输入用户名"
+            :input-props="usernameInputProps"
+            @keydown.enter.prevent="submit"
+          />
         </n-form-item>
         <n-form-item label="密码">
-          <n-input v-model:value="password" type="password" placeholder="请输入密码" />
+          <n-input
+            v-model:value="password"
+            type="password"
+            placeholder="请输入密码"
+            :input-props="passwordInputProps"
+            @keydown.enter.prevent="submit"
+          />
         </n-form-item>
         <div :class="['actions', { 'actions--pwa': isStandalonePwa }]">
           <n-button type="primary" :block="!isStandalonePwa" :loading="auth.loading" @click="submit">登录</n-button>
@@ -36,6 +47,22 @@ const username = ref('')
 const password = ref('')
 const isStandalonePwa = ref(false)
 let standaloneMedia: MediaQueryList | null = null
+
+const usernameInputProps = {
+  name: 'username',
+  autocomplete: 'username',
+  autocapitalize: 'none',
+  autocorrect: 'off',
+  spellcheck: 'false'
+} as const
+
+const passwordInputProps = {
+  name: 'current-password',
+  autocomplete: 'current-password',
+  autocapitalize: 'none',
+  autocorrect: 'off',
+  spellcheck: 'false'
+} as const
 
 async function submit() {
   try {

@@ -9,26 +9,6 @@
       />
     </div>
 
-    <div :class="['panel-header', 'browser-header', { 'browser-header--mobile-hidden': showMobileSearch }]">
-      <div class="browser-main">
-        <div v-if="title || subtitle" class="panel-left">
-          <div v-if="title" class="panel-title">{{ title }}</div>
-          <div v-if="subtitle" class="panel-subtitle mobile-topbar-title-hidden">{{ subtitle }}</div>
-        </div>
-        <n-input
-          v-if="searchEnabled"
-          v-model:value="searchTerm"
-          class="panel-search"
-          :placeholder="resolvedSearchPlaceholder"
-          clearable
-        />
-      </div>
-      <div v-if="metaText || showBackButton" class="browser-side">
-        <div class="meta" v-if="metaText">{{ metaText }}</div>
-        <n-button v-if="showBackButton" size="small" @click="emit('back')">返回</n-button>
-      </div>
-    </div>
-
     <ImageGrid
       v-if="filteredImages.length"
       :images="filteredImages"
@@ -130,46 +110,6 @@ watch(
   display: none;
 }
 
-.browser-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.browser-main {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex: 1;
-  min-width: 0;
-  flex-wrap: wrap;
-}
-
-.panel-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  min-width: 0;
-}
-
-.browser-side {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.panel-subtitle {
-  font-size: 12px;
-  color: var(--muted);
-  font-weight: 700;
-  letter-spacing: 0.01em;
-}
-
 .panel-search {
   width: 320px;
   max-width: 40vw;
@@ -183,24 +123,9 @@ watch(
 }
 
 @media (max-width: 960px) {
-  .browser-header--mobile-hidden {
-    display: none;
-  }
-
   .browser-mobile-bar {
     display: grid;
     gap: 0;
-  }
-
-  .browser-header,
-  .browser-main,
-  .browser-side {
-    align-items: flex-start;
-  }
-
-  .browser-side {
-    width: 100%;
-    justify-content: space-between;
   }
 
   .panel-search {
