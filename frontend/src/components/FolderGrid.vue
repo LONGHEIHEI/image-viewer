@@ -70,9 +70,14 @@ const emit = defineEmits<{
 const revealStorageKey = computed(() => props.privacyStorageKey || '')
 const privacyEnabled = computed(() => Boolean(props.privacyEnabled))
 const { isRevealed, reveal } = usePrivacyReveal(revealStorageKey)
-const gridStyle = computed(() => ({
-  '--folder-card-min-width': `${Math.max(160, props.cardMinWidth ?? 210)}px`
-}))
+const gridStyle = computed(() => {
+  const desktopMinWidth = Math.max(160, props.cardMinWidth ?? 210)
+  const mobileMinWidth = Math.max(148, Math.min(desktopMinWidth, 176))
+  return {
+    '--folder-card-min-width': `${desktopMinWidth}px`,
+    '--folder-card-mobile-min-width': `${mobileMinWidth}px`
+  }
+})
 
 function handleFolderClick(path: string) {
   if (privacyEnabled.value && !isRevealed(`folder:${path}`)) {
@@ -203,5 +208,26 @@ function onThumbError(event: Event) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+@media (max-width: 960px) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(var(--folder-card-mobile-min-width, 160px), 1fr));
+    gap: 10px;
+  }
+
+  .card {
+    border-radius: 14px;
+  }
+
+  .label-area {
+    padding: 10px 12px 12px;
+  }
+}
+
+@media (max-width: 420px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 </style>

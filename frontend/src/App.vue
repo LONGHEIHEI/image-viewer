@@ -210,10 +210,13 @@ const isArchiveRoute = computed(() => route.path === '/folder' && Boolean(route.
 const isAlbumBrowseRoute = computed(
   () => isCollectionRoute.value || (route.path === '/folder' && Boolean(route.query.collection))
 )
-const showMobileTopbar = computed(() => showMenu.value && isMobile.value && !isStandalonePwa.value)
+const useImmersiveMobileChrome = computed(
+  () => showMenu.value && isMobile.value && isStandalonePwa.value && isImageRoute.value
+)
+const showMobileTopbar = computed(() => showMenu.value && isMobile.value && !useImmersiveMobileChrome.value)
 const showTopbarBackButton = computed(() => isImageRoute.value || isCollectionRoute.value || isArchiveRoute.value)
-const showFloatingBackButton = computed(() => showMenu.value && isMobile.value && isStandalonePwa.value && (isImageRoute.value || isCollectionRoute.value || isArchiveRoute.value))
-const showFloatingMenuButton = computed(() => showMenu.value && isMobile.value && isStandalonePwa.value && !isImageRoute.value && !isCollectionRoute.value && !isArchiveRoute.value)
+const showFloatingBackButton = computed(() => useImmersiveMobileChrome.value)
+const showFloatingMenuButton = computed(() => false)
 const showFloatingNavButton = computed(() => showFloatingBackButton.value || showFloatingMenuButton.value)
 const showSider = computed(() => showMenu.value && !isMobile.value)
 const drawerWidth = computed(() => (isMobile.value ? 288 : 260))
@@ -232,7 +235,9 @@ const topbarMediaCount = computed(() => {
   return total > 0 ? `共 ${total} 张` : ''
 })
 const showTopbarMediaCount = computed(() => showMobileTopbar.value && Boolean(topbarMediaCount.value))
-const showFloatingMediaCount = computed(() => showMenu.value && isMobile.value && isStandalonePwa.value && Boolean(topbarMediaCount.value))
+const showFloatingMediaCount = computed(
+  () => useImmersiveMobileChrome.value && Boolean(topbarMediaCount.value)
+)
 
 function basename(value: string) {
   const parts = value.split(/[\\/]+/).filter(Boolean)
@@ -245,7 +250,7 @@ const currentMobileTitle = computed(() => {
     return archive ? basename(archive) : '内容'
   }
   if (route.path === '/image') return ''
-  if (route.path.startsWith('/collection/')) return ''
+  if (route.path.startsWith('/collection/')) return gallery.collectionName || '图集'
   if (route.path === '/settings') return '设置'
   if (route.path === '/collections') return '图集'
   return '图库'
@@ -413,6 +418,7 @@ onBeforeUnmount(() => {
 .app {
   min-height: 100dvh;
   background: transparent;
+  --mobile-topbar-offset: calc(var(--mobile-topbar-height) + 10px + env(safe-area-inset-top));
 }
 
 .app-topbar {
@@ -424,10 +430,11 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  min-height: var(--mobile-topbar-height);
   padding:
-    calc(10px + env(safe-area-inset-top))
+    calc(8px + env(safe-area-inset-top))
     calc(16px + env(safe-area-inset-right))
-    10px
+    8px
     calc(16px + env(safe-area-inset-left));
   background: var(--panel-strong);
   border-bottom: 1px solid var(--stroke);
@@ -512,7 +519,7 @@ onBeforeUnmount(() => {
 }
 
 .page-container--with-topbar {
-  padding-top: calc(76px + env(safe-area-inset-top));
+  padding-top: var(--mobile-topbar-offset);
 }
 
 .page-container--image {
@@ -520,7 +527,7 @@ onBeforeUnmount(() => {
 }
 
 .page-container--collection {
-  padding-top: 2px;
+  padding-top: 0;
 }
 
 .sider-inner {
@@ -646,7 +653,7 @@ onBeforeUnmount(() => {
     padding:
       calc(6px + env(safe-area-inset-top))
       calc(14px + env(safe-area-inset-right))
-      8px
+      6px
       calc(14px + env(safe-area-inset-left));
   }
 
@@ -688,16 +695,16 @@ onBeforeUnmount(() => {
   .page-container--image {
     padding:
       0 calc(10px + env(safe-area-inset-right))
-      calc(108px + env(safe-area-inset-bottom))
+      calc(var(--mobile-viewer-toolbar-space) + env(safe-area-inset-bottom))
       calc(10px + env(safe-area-inset-left));
   }
 
   .page-container--with-topbar.page-container--image {
-    padding-top: calc(66px + env(safe-area-inset-top));
+    padding-top: calc(var(--mobile-topbar-height) + 6px + env(safe-area-inset-top));
   }
 
   .page-container--with-topbar.page-container--collection {
-    padding-top: calc(64px + env(safe-area-inset-top));
+    padding-top: var(--mobile-topbar-offset);
   }
 
   .page-container--collection {

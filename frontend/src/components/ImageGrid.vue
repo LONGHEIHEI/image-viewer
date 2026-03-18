@@ -96,8 +96,9 @@ let renderedCount = 0
 
 function getColumnCount() {
   if (typeof window === 'undefined') return 2
-  if (window.innerWidth >= 1100) return 4
-  if (window.innerWidth >= 700) return 3
+  if (window.innerWidth >= 1280) return 4
+  if (window.innerWidth >= 860) return 3
+  if (window.innerWidth < 360) return 1
   return 2
 }
 
@@ -356,5 +357,16 @@ function fileExt(name?: string) {
   font-size: 13px;
   color: var(--ink);
   word-break: break-all;
+}
+
+@media (max-width: 960px) {
+  .masonry-grid,
+  .masonry-column {
+    gap: 8px;
+  }
+
+  .tile {
+    border-radius: 10px;
+  }
 }
 </style>

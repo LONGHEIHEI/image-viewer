@@ -1,5 +1,5 @@
 <template>
-  <div class="page image-page">
+  <div class="page image-page page--floating-action">
     <div class="page-header">
       <div class="page-actions">
         <span v-if="showPositionBadge" class="viewer-position-badge">
@@ -301,6 +301,7 @@ onUnmounted(() => {
 .viewer-shell {
   display: grid;
   min-width: 0;
+  min-height: calc(100dvh - 180px);
   padding-top: 6px;
 }
 
@@ -343,7 +344,7 @@ onUnmounted(() => {
     position: fixed;
     left: calc(10px + env(safe-area-inset-left));
     right: calc(10px + env(safe-area-inset-right));
-    bottom: calc(12px + env(safe-area-inset-bottom));
+    bottom: calc(10px + env(safe-area-inset-bottom));
     z-index: 15;
     margin: 0;
     justify-content: center;
@@ -351,16 +352,21 @@ onUnmounted(() => {
   }
 
   .page-actions {
-    width: auto;
+    width: min(100%, 560px);
     max-width: 100%;
-    justify-content: center;
-    padding: 8px 10px;
-    border-radius: 18px;
+    justify-content: flex-start;
+    padding: 8px;
+    border-radius: 20px;
     background: rgba(255, 255, 255, 0.9);
     border: 1px solid rgba(27, 30, 39, 0.08);
     box-shadow: 0 14px 30px rgba(20, 25, 35, 0.14);
     backdrop-filter: blur(16px);
     pointer-events: auto;
+  }
+
+  .viewer-shell {
+    min-height: calc(100dvh - 154px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    padding-top: 0;
   }
 
   .viewer-position-badge {

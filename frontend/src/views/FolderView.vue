@@ -1,11 +1,20 @@
 <template>
-  <div class="page">
+  <div :class="['page', { 'page--floating-action': showPrivacyToggleButton }]">
     <section v-if="listing" class="archive-browser">
       <div v-if="showPrivacyToggleButton" class="privacy-toolbar">
         <PrivacyRevealButton
           :title="privacyToggleTitle"
           :active="allCurrentRevealed"
           @click="toggleCurrentArchivePrivacy"
+        />
+      </div>
+      <div class="browser-mobile-bar">
+        <div v-if="archiveLabel" class="browser-mobile-caption">{{ archiveLabel }}</div>
+        <n-input
+          v-model:value="searchTerm"
+          class="panel-search panel-search--mobile"
+          placeholder="搜索压缩包内图片"
+          clearable
         />
       </div>
       <div class="panel-header browser-header browser-header--mobile-hidden">
@@ -243,6 +252,10 @@ function thumb(filePath: string) {
   gap: 12px;
 }
 
+.browser-mobile-bar {
+  display: none;
+}
+
 .privacy-toolbar {
   position: fixed;
   right: calc(20px + env(safe-area-inset-right));
@@ -306,6 +319,19 @@ function thumb(filePath: string) {
     display: none;
   }
 
+  .browser-mobile-bar {
+    display: grid;
+    gap: 8px;
+  }
+
+  .browser-mobile-caption {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    line-height: 1.3;
+    word-break: break-word;
+  }
+
   .browser-header,
   .browser-main,
   .browser-side {
@@ -320,6 +346,10 @@ function thumb(filePath: string) {
   .panel-search {
     width: 100%;
     max-width: none;
+  }
+
+  .panel-search--mobile {
+    width: 100%;
   }
 
   .privacy-toolbar {

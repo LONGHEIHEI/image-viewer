@@ -1,5 +1,5 @@
 <template>
-  <div class="page">
+  <div :class="['page', { 'page--floating-action': showPrivacyToggleButton }]">
     <div class="page-header page-header--actions-only page-header--mobile-hidden">
       <div class="page-actions">
         <span v-if="store.collectionListing?.total_images" class="page-meta-badge">
@@ -324,6 +324,7 @@ function goBack() {
 .collection-section {
   display: grid;
   gap: 12px;
+  min-width: 0;
 }
 
 .privacy-toolbar {

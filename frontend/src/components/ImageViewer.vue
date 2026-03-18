@@ -130,6 +130,8 @@ defineExpose({
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  width: 100%;
+  min-height: inherit;
 }
 
 .stage {
@@ -142,6 +144,8 @@ defineExpose({
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  width: 100%;
+  min-height: calc(100dvh - 210px);
   touch-action: none;
   cursor: grab;
 }
@@ -159,7 +163,7 @@ defineExpose({
 
 .stage img {
   max-width: min(100%, 1100px);
-  max-height: 75vh;
+  max-height: calc(100dvh - 230px);
   border-radius: 0;
   display: block;
   transition: transform 0.05s linear;
@@ -177,5 +181,29 @@ defineExpose({
 .hints {
   font-size: 11px;
   color: rgba(92, 102, 114, 0.68);
+}
+
+@media (max-width: 960px) {
+  .viewer {
+    gap: 6px;
+  }
+
+  .stage {
+    min-height: calc(100dvh - 220px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  }
+
+  .stage img {
+    max-height: calc(100dvh - 240px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  }
+
+  .caption {
+    max-width: 100%;
+    padding: 0 4px;
+    font-size: 12px;
+  }
+
+  .hints {
+    display: none;
+  }
 }
 </style>
