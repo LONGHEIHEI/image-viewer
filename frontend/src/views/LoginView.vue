@@ -8,10 +8,6 @@
           <div class="brand-subtitle">轻量图片浏览器</div>
         </div>
       </div>
-      <div class="form-heading">
-        <div class="form-title">登录</div>
-        <div class="form-caption">登录后即可浏览图集、目录与压缩包内容</div>
-      </div>
       <n-form>
         <n-form-item label="用户名">
           <n-input v-model:value="username" placeholder="请输入用户名" />
@@ -143,26 +139,6 @@ onBeforeUnmount(() => {
   text-transform: uppercase;
 }
 
-.form-heading {
-  display: grid;
-  gap: 4px;
-  margin-bottom: 12px;
-}
-
-.form-title {
-  font-family: 'Space Grotesk', Arial, sans-serif;
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 1.15;
-  color: var(--ink);
-}
-
-.form-caption {
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--muted);
-}
-
 .actions {
   display: flex;
 }
@@ -197,8 +173,5 @@ onBeforeUnmount(() => {
     font-size: 20px;
   }
 
-  .form-title {
-    font-size: 18px;
-  }
 }
 </style>

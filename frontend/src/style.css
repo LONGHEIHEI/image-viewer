@@ -4,6 +4,7 @@
   color-scheme: light;
   --page-gutter: 16px;
   --mobile-topbar-height: 54px;
+  --mobile-viewer-top-chrome-space: 64px;
   --mobile-viewer-toolbar-space: 92px;
   --safe-area-top: env(safe-area-inset-top, 0px);
   --safe-area-right: env(safe-area-inset-right, 0px);

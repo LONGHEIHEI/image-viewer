@@ -115,6 +115,7 @@
                 {
                   'page-container--with-topbar': showMobileTopbar,
                   'page-container--image': isImageRoute,
+                  'page-container--image-immersive': useImmersiveMobileChrome,
                   'page-container--collection': isCollectionRoute
                 }
               ]"
@@ -845,6 +846,10 @@ onBeforeUnmount(() => {
       0 calc(10px + var(--safe-area-right))
       calc(var(--mobile-viewer-toolbar-space) + var(--safe-area-bottom))
       calc(10px + var(--safe-area-left));
+  }
+
+  .page-container--image.page-container--image-immersive {
+    padding-top: calc(var(--mobile-viewer-top-chrome-space) + var(--safe-area-top));
   }
 
   .page-container--with-topbar.page-container--image {

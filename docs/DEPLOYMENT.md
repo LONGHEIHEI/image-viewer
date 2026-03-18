@@ -33,6 +33,21 @@ docker compose up -d --build
 - `GET /health`
 - `GET /api/health`
 
+## PWA Update Flow
+- Frontend PWA registration uses a prompt-based update flow instead of silent asset swapping.
+- When a newer service worker has finished downloading static assets, the standalone app shows an in-app refresh button so the user can choose when to reload.
+- This reduces surprise reloads during image browsing, especially on mobile/PWA installs.
+
+## PWA Icons
+- Current static assets include `frontend/public/icon.png` and `frontend/public/favicon.ico`.
+- `index.html` also exposes `/icon.png` as `apple-touch-icon`.
+- If the app will be distributed across multiple install surfaces (Android launcher, desktop shells, iOS home screen), prepare dedicated icon files for at least:
+  - `192x192`
+  - `512x512`
+  - `maskable 512x512`
+  - `apple-touch-icon 180x180`
+- Reusing a single source file for every declared size can work in some browsers but is less reliable across installers and launchers.
+
 ## Archive Dependencies
 - ZIP works out of the box
 - 7Z/RAR require full dependencies
