@@ -43,15 +43,15 @@
     <n-modal
       v-model:show="showCreate"
       title="新建图集"
-      :trap-focus="!pickerVisible"
+      :trap-focus="false"
       :style="{ width: 'min(600px, 92vw)' }"
       :transition-name="null"
       :mask-transition-name="null"
     >
-      <n-form class="flat-form modal-surface" label-placement="top" :show-feedback="false">
-        <n-form-item label="集合名称">
-          <n-input v-model:value="newCollection.name" placeholder="用于前台展示，例如：家庭相册" />
-        </n-form-item>
+        <n-form class="flat-form modal-surface" label-placement="top" :show-feedback="false">
+          <n-form-item label="集合名称">
+            <n-input v-model:value="newCollection.name" placeholder="用于前台展示，例如：家庭相册" />
+          </n-form-item>
         <n-form-item label="图片来源目录">
           <div class="folder-block">
             <n-list bordered class="path-list">
@@ -101,15 +101,15 @@
     <n-modal
       v-model:show="showEdit"
       title="编辑集合"
-      :trap-focus="!pickerVisible"
+      :trap-focus="false"
       :style="{ width: 'min(600px, 92vw)' }"
       :transition-name="null"
       :mask-transition-name="null"
     >
-      <n-form class="flat-form modal-surface" label-placement="top" :show-feedback="false">
-        <n-form-item label="集合名称">
-          <n-input v-model:value="editForm.name" placeholder="用于前台展示，例如：家庭相册" />
-        </n-form-item>
+        <n-form class="flat-form modal-surface" label-placement="top" :show-feedback="false">
+          <n-form-item label="集合名称">
+            <n-input v-model:value="editForm.name" placeholder="用于前台展示，例如：家庭相册" />
+          </n-form-item>
         <n-form-item label="图片来源目录">
           <div class="folder-block">
             <n-list bordered class="path-list">
