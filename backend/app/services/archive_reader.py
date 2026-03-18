@@ -1,5 +1,6 @@
 import zipfile
 from pathlib import Path
+from PIL import ImageFile
 from app.utils.mime import guess_mime
 from app.utils.path import to_relative
 
@@ -18,6 +19,99 @@ IMAGE_EXTS = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'}
 
 class ArchiveSupportError(Exception):
     pass
+
+
+def _read_image_dimensions_from_stream(stream) -> dict[str, int]:
+    parser = ImageFile.Parser()
+    try:
+        while True:
+            chunk = stream.read(64 * 1024)
+            if not chunk:
+                break
+            parser.feed(chunk)
+            if parser.image:
+                width, height = parser.image.size
+                if width > 0 and height > 0:
+                    return {
+                        'width': width,
+                        'height': height
+                    }
+                break
+    except Exception:
+        return {}
+    finally:
+        try:
+            parser.close()
+        except Exception:
+            pass
+    return {}
+
+
+def _build_archive_image_item(name: str, dimensions: dict[str, int]) -> dict:
+    return {
+        'name': Path(name).name,
+        'path': name,
+        **dimensions
+    }
+
+
+def _list_zip_image_items(path: Path, names: list[str]) -> list[dict]:
+    items: list[dict] = []
+    with zipfile.ZipFile(path, 'r') as zf:
+        for name in names:
+            dimensions = {}
+            try:
+                with zf.open(name, 'r') as fp:
+                    dimensions = _read_image_dimensions_from_stream(fp)
+            except Exception:
+                dimensions = {}
+            items.append(_build_archive_image_item(name, dimensions))
+    return items
+
+
+def _list_7z_image_items(path: Path, names: list[str]) -> list[dict]:
+    if py7zr is None:
+        raise ArchiveSupportError('需要安装 py7zr 才能支持 7z')
+    items: list[dict] = []
+    with py7zr.SevenZipFile(path, 'r') as zf:
+        contents = zf.read(names)
+    for name in names:
+        dimensions = {}
+        handle = contents.get(name)
+        if handle is not None:
+            try:
+                dimensions = _read_image_dimensions_from_stream(handle)
+            except Exception:
+                dimensions = {}
+        items.append(_build_archive_image_item(name, dimensions))
+    return items
+
+
+def _list_rar_image_items(path: Path, names: list[str]) -> list[dict]:
+    if rarfile is None:
+        raise ArchiveSupportError('需要安装 rarfile 和 unrar 才能支持 RAR')
+    items: list[dict] = []
+    try:
+        with rarfile.RarFile(path) as rf:
+            for name in names:
+                dimensions = {}
+                try:
+                    with rf.open(name) as fp:
+                        dimensions = _read_image_dimensions_from_stream(fp)
+                except Exception:
+                    dimensions = {}
+                items.append(_build_archive_image_item(name, dimensions))
+    except rarfile.Error as exc:
+        raise ArchiveSupportError(str(exc))
+    return items
+
+
+def _list_archive_image_items(path: Path, archive_type: str, names: list[str]) -> list[dict]:
+    if archive_type == 'zip':
+        return _list_zip_image_items(path, names)
+    if archive_type == '7z':
+        return _list_7z_image_items(path, names)
+    return _list_rar_image_items(path, names)
 
 
 def _list_zip(path: Path):
@@ -98,20 +192,15 @@ def list_archive(archive_path: str, root: str, page: int = 1, page_size: int = 2
     else:
         names = _list_rar(path)
 
-    files_all = []
-    for name in names:
-        ext = Path(name).suffix.lower()
-        if ext in IMAGE_EXTS:
-            files_all.append({
-                'name': Path(name).name,
-                'path': name
-            })
-
-    files_all.sort(key=lambda item: item['path'].lower())
-    total_files = len(files_all)
+    image_names = [
+        name for name in names
+        if Path(name).suffix.lower() in IMAGE_EXTS
+    ]
+    image_names.sort(key=lambda item: item.lower())
+    total_files = len(image_names)
     start = (page - 1) * page_size
     end = start + page_size
-    files = files_all[start:end]
+    files = _list_archive_image_items(path, archive_type, image_names[start:end])
 
     return {
         'archive': to_relative(path, root),

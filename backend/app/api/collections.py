@@ -7,7 +7,7 @@ from typing import List
 from app.services import db
 from app.services.auth import hash_password, verify_password, create_collection_token, decode_token
 from app.services.deps import get_current_user, require_admin
-from app.services.fs_indexer import list_folder, IMAGE_EXTS, ARCHIVE_EXTS, build_tree
+from app.services.fs_indexer import list_folder, IMAGE_EXTS, ARCHIVE_EXTS, build_tree, get_image_dimensions
 from app.services.archive_reader import (
     list_archive,
     stream_archive_image,
@@ -239,8 +239,16 @@ def _find_first_image_in_tree(folder: Path, max_depth: int = 2) -> str | None:
     return None
 
 
-def _collect_images_in_tree(folder: Path, root: str, max_depth: int) -> list[dict]:
-    images: list[dict] = []
+def _build_collection_image_item(path: Path, root: str) -> dict:
+    return {
+        'name': path.name,
+        'path': to_relative(path, root),
+        **get_image_dimensions(path)
+    }
+
+
+def _collect_images_in_tree(folder: Path, max_depth: int) -> list[Path]:
+    images: list[Path] = []
     if max_depth < 0:
         return images
     try:
@@ -249,9 +257,9 @@ def _collect_images_in_tree(folder: Path, root: str, max_depth: int) -> list[dic
         return images
     for entry in entries:
         if entry.is_file() and entry.suffix.lower() in IMAGE_EXTS:
-            images.append({'name': entry.name, 'path': to_relative(entry, root)})
+            images.append(entry)
         elif entry.is_dir() and max_depth > 0:
-            images.extend(_collect_images_in_tree(entry, root, max_depth - 1))
+            images.extend(_collect_images_in_tree(entry, max_depth - 1))
     return images
 
 
@@ -517,11 +525,14 @@ def collection_folder(
             except FileNotFoundError:
                 raise HTTPException(status_code=404, detail='目录不存在，请检查路径')
             if view == 'flat':
-                images_all = _collect_images_in_tree(Path(abs_path), settings.photo_root, flat_depth)
+                images_all = _collect_images_in_tree(Path(abs_path), flat_depth)
                 total_images = len(images_all)
                 start = (page - 1) * page_size
                 end = start + page_size
-                listing['images'] = images_all[start:end]
+                listing['images'] = [
+                    _build_collection_image_item(image_path, settings.photo_root)
+                    for image_path in images_all[start:end]
+                ]
                 listing['total_images'] = total_images
                 listing['has_more'] = end < total_images
             listing = _normalize_listing_paths(listing)
@@ -544,11 +555,14 @@ def collection_folder(
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail='目录不存在，请检查路径')
     if view == 'flat':
-        images_all = _collect_images_in_tree(Path(abs_path), settings.photo_root, flat_depth)
+        images_all = _collect_images_in_tree(Path(abs_path), flat_depth)
         total_images = len(images_all)
         start = (page - 1) * page_size
         end = start + page_size
-        listing['images'] = images_all[start:end]
+        listing['images'] = [
+            _build_collection_image_item(image_path, settings.photo_root)
+            for image_path in images_all[start:end]
+        ]
         listing['total_images'] = total_images
         listing['has_more'] = end < total_images
     listing = _normalize_listing_paths(listing)

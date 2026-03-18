@@ -8,10 +8,13 @@
       @click="handleFolderClick(folder.path)"
     >
       <div :class="['thumb', { 'thumb--private': privacyEnabled && !isRevealed(`folder:${folder.path}`) }]" v-if="folderThumb">
+        <div class="thumb-placeholder" aria-hidden="true"></div>
         <img
           :src="folderThumb(folder.path)"
           :alt="folder.name"
           loading="lazy"
+          decoding="async"
+          @load="onThumbLoad"
           @error="onThumbError"
         />
         <div class="thumb-fallback">目录</div>
@@ -30,10 +33,13 @@
       @click="handleArchiveClick(archive.path)"
     >
       <div :class="['thumb', { 'thumb--private': privacyEnabled && !isRevealed(`archive:${archive.path}`) }]" v-if="archiveThumb">
+        <div class="thumb-placeholder" aria-hidden="true"></div>
         <img
           :src="archiveThumb(archive.path)"
           :alt="archive.name"
           loading="lazy"
+          decoding="async"
+          @load="onThumbLoad"
           @error="onThumbError"
         />
         <div class="thumb-fallback">压缩包</div>
@@ -99,6 +105,12 @@ function onThumbError(event: Event) {
   const target = event.target as HTMLImageElement | null
   if (!target) return
   target.classList.add('hidden')
+  target.closest('.thumb')?.classList.add('thumb--failed')
+}
+
+function onThumbLoad(event: Event) {
+  const target = event.target as HTMLImageElement | null
+  target?.closest('.thumb')?.classList.add('thumb--ready')
 }
 </script>
 
@@ -145,8 +157,16 @@ function onThumbError(event: Event) {
 .thumb {
   position: relative;
   overflow: hidden;
-  background: #f0f2f4;
+  background: var(--placeholder-surface);
   aspect-ratio: 4 / 3;
+}
+
+.thumb-placeholder {
+  position: absolute;
+  inset: 0;
+  background: var(--placeholder-surface);
+  opacity: 1;
+  transition: opacity 0.2s ease;
 }
 
 .thumb img {
@@ -154,10 +174,21 @@ function onThumbError(event: Event) {
   height: 100%;
   object-fit: cover;
   display: block;
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
 .thumb img.hidden {
   display: none;
+}
+
+.thumb--ready img {
+  opacity: 1;
+}
+
+.thumb--ready .thumb-placeholder,
+.thumb--failed .thumb-placeholder {
+  opacity: 0;
 }
 
 .thumb-fallback {

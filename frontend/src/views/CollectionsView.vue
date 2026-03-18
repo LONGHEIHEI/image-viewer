@@ -4,7 +4,16 @@
       <div class="page-title">图集</div>
     </div>
 
-    <div class="collections-grid" v-if="collections.length">
+    <div class="collections-grid collections-grid--placeholder" v-if="loading">
+      <div v-for="item in loadingPlaceholders" :key="item" class="collection-card collection-card--placeholder">
+        <div class="cover cover--placeholder">
+          <div class="cover-placeholder"></div>
+        </div>
+        <div class="title title--placeholder"></div>
+      </div>
+    </div>
+
+    <div class="collections-grid" v-else-if="collections.length">
       <div
         v-for="item in collections"
         :key="item.id"
@@ -12,10 +21,13 @@
         @click="handleCollectionClick(item)"
       >
         <div :class="['cover', { 'cover--private': item.privacy_enabled && !isRevealed(`cover:${item.id}`) }]">
+          <div class="cover-placeholder" aria-hidden="true"></div>
           <img
             :src="collectionCoverUrl(item.id)"
             :alt="item.name"
             loading="lazy"
+            decoding="async"
+            @load="onCoverLoad"
             @error="onCoverError"
           />
           <div class="cover-fallback">图集封面</div>
@@ -40,10 +52,16 @@ import { usePrivacyReveal } from '../composables/usePrivacyReveal'
 
 const router = useRouter()
 const collections = ref<CollectionSummary[]>([])
+const loading = ref(true)
+const loadingPlaceholders = Array.from({ length: 6 }, (_, index) => index)
 const { isRevealed, reveal } = usePrivacyReveal('collection-cover-privacy')
 
 onMounted(async () => {
-  collections.value = await getCollectionsAvailable()
+  try {
+    collections.value = await getCollectionsAvailable()
+  } finally {
+    loading.value = false
+  }
 })
 
 function openCollection(id: number) {
@@ -62,10 +80,20 @@ function onCoverError(event: Event) {
   const target = event.target as HTMLImageElement | null
   if (!target) return
   target.classList.add('hidden')
+  target.closest('.cover')?.classList.add('cover--failed')
+}
+
+function onCoverLoad(event: Event) {
+  const target = event.target as HTMLImageElement | null
+  target?.closest('.cover')?.classList.add('cover--ready')
 }
 </script>
 
 <style scoped>
+.collections-grid--placeholder {
+  pointer-events: none;
+}
+
 .collections-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -98,7 +126,15 @@ function onCoverError(event: Event) {
   aspect-ratio: 16 / 9;
   overflow: hidden;
   position: relative;
-  background: #f7f7f7;
+  background: var(--placeholder-surface);
+}
+
+.cover-placeholder {
+  position: absolute;
+  inset: 0;
+  background: var(--placeholder-surface);
+  opacity: 1;
+  transition: opacity 0.2s ease;
 }
 
 .cover img {
@@ -106,10 +142,21 @@ function onCoverError(event: Event) {
   height: 100%;
   object-fit: cover;
   display: block;
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
 .cover img.hidden {
   display: none;
+}
+
+.cover--ready img {
+  opacity: 1;
+}
+
+.cover--ready .cover-placeholder,
+.cover--failed .cover-placeholder {
+  opacity: 0;
 }
 
 .cover--private img {
@@ -182,6 +229,13 @@ function onCoverError(event: Event) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.title--placeholder {
+  height: 18px;
+  margin: 0 12px;
+  border-radius: 999px;
+  background: var(--placeholder-surface);
 }
 
 @media (max-width: 960px) {

@@ -329,8 +329,8 @@ function goBack() {
 
 .privacy-toolbar {
   position: fixed;
-  right: calc(20px + env(safe-area-inset-right));
-  bottom: calc(22px + env(safe-area-inset-bottom));
+  right: calc(20px + var(--safe-area-right));
+  bottom: calc(22px + var(--safe-area-bottom));
   z-index: 40;
 }
 
@@ -352,8 +352,8 @@ function goBack() {
   }
 
   .privacy-toolbar {
-    right: calc(14px + env(safe-area-inset-right));
-    bottom: calc(16px + env(safe-area-inset-bottom));
+    right: calc(14px + var(--safe-area-right));
+    bottom: calc(16px + var(--safe-area-bottom));
   }
 
   .image-panel {

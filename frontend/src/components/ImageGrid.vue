@@ -14,16 +14,26 @@
         @contextmenu.prevent="openMenu($event, image)"
       >
         <div
-          :class="['thumb', { 'thumb--private': privacyEnabled && !isRevealed(`image:${image.path}`) }]"
+          :class="[
+            'thumb',
+            {
+              'thumb--private': privacyEnabled && !isRevealed(`image:${image.path}`),
+              'thumb--sized': hasImageSize(image)
+            }
+          ]"
+          :style="getThumbStyle(image)"
           :data-title="image.name"
         >
+          <div class="thumb-placeholder" aria-hidden="true"></div>
           <img
             :src="thumb(image.path)"
             :alt="image.name"
             loading="lazy"
             decoding="async"
             @load="handleImageLoad($event, image.path)"
+            @error="handleImageError"
           />
+          <div class="thumb-fallback">加载失败</div>
           <div v-if="privacyEnabled && !isRevealed(`image:${image.path}`)" class="privacy-mask"></div>
         </div>
       </div>
@@ -61,6 +71,11 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { NDropdown, NModal } from 'naive-ui'
 import type { FolderItem } from '../api/client'
 import { usePrivacyReveal } from '../composables/usePrivacyReveal'
+
+type SizedFolderItem = FolderItem & {
+  width?: number
+  height?: number
+}
 
 const props = defineProps<{
   images: FolderItem[]
@@ -108,7 +123,29 @@ function getAverageImageHeight() {
 }
 
 function estimateImageHeight(image: FolderItem) {
-  return imageHeights.get(image.path) ?? getAverageImageHeight()
+  const sampledHeight = imageHeights.get(image.path)
+  if (sampledHeight !== undefined) return sampledHeight
+  if (hasImageSize(image)) {
+    return 220 * (image.height / image.width)
+  }
+  return getAverageImageHeight()
+}
+
+function hasImageSize(image: FolderItem): image is SizedFolderItem {
+  const sizedImage = image as SizedFolderItem
+  return (
+    Number.isFinite(sizedImage.width) &&
+    Number.isFinite(sizedImage.height) &&
+    Number(sizedImage.width) > 0 &&
+    Number(sizedImage.height) > 0
+  )
+}
+
+function getThumbStyle(image: FolderItem) {
+  if (!hasImageSize(image)) return undefined
+  return {
+    aspectRatio: `${image.width} / ${image.height}`
+  }
 }
 
 function readColumnHeights() {
@@ -155,6 +192,7 @@ function syncColumnCount() {
 function handleImageLoad(event: Event, path: string) {
   const image = event.target as HTMLImageElement | null
   if (!image) return
+  image.closest('.thumb')?.classList.add('thumb--ready')
   const renderedWidth = image.clientWidth || image.naturalWidth || 1
   const renderedHeight =
     image.clientHeight ||
@@ -167,6 +205,13 @@ function handleImageLoad(event: Event, path: string) {
   }
   imageHeights.set(path, renderedHeight)
   heightSum += renderedHeight
+}
+
+function handleImageError(event: Event) {
+  const image = event.target as HTMLImageElement | null
+  if (!image) return
+  image.classList.add('hidden')
+  image.closest('.thumb')?.classList.add('thumb--failed')
 }
 
 function handleTileClick(path: string) {
@@ -292,11 +337,40 @@ function fileExt(name?: string) {
 .thumb {
   position: relative;
   overflow: hidden;
+  min-height: 160px;
+  background: var(--placeholder-surface);
+}
+
+.thumb--sized {
+  min-height: 0;
+}
+
+.thumb-placeholder {
+  position: absolute;
+  inset: 0;
+  background: var(--placeholder-surface);
+  opacity: 1;
+  transition: opacity 0.2s ease;
 }
 
 .thumb img {
   width: 100%;
   display: block;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.thumb img.hidden {
+  display: none;
+}
+
+.thumb--ready img {
+  opacity: 1;
+}
+
+.thumb--ready .thumb-placeholder,
+.thumb--failed .thumb-placeholder {
+  opacity: 0;
 }
 
 .thumb--private img {
@@ -334,7 +408,24 @@ function fileExt(name?: string) {
   pointer-events: none;
 }
 
-.tile:hover .thumb::after {
+.tile:hover .thumb--ready::after {
+  opacity: 1;
+}
+
+.thumb-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  opacity: 0;
+}
+
+.thumb--failed .thumb-fallback {
   opacity: 1;
 }
 

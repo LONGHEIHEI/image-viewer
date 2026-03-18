@@ -342,9 +342,9 @@ onUnmounted(() => {
 
   .page-header {
     position: fixed;
-    left: calc(10px + env(safe-area-inset-left));
-    right: calc(10px + env(safe-area-inset-right));
-    bottom: calc(10px + env(safe-area-inset-bottom));
+    left: calc(10px + var(--safe-area-left));
+    right: calc(10px + var(--safe-area-right));
+    bottom: calc(10px + var(--safe-area-bottom));
     z-index: 15;
     margin: 0;
     justify-content: center;
@@ -365,7 +365,7 @@ onUnmounted(() => {
   }
 
   .viewer-shell {
-    min-height: calc(100dvh - 154px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    min-height: calc(100dvh - 154px - var(--safe-area-top) - var(--safe-area-bottom));
     padding-top: 0;
   }
 

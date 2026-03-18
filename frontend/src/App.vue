@@ -165,9 +165,12 @@ const route = useRoute()
 const drawerActive = ref(false)
 const isMobile = ref(false)
 const isStandalonePwa = ref(false)
+const actualStandalonePwa = ref(false)
 const simulatedStandalonePwa = ref(false)
+const autoPreviewStandalonePwa = ref(false)
 let menuMedia: MediaQueryList | null = null
 let standaloneMedia: MediaQueryList | null = null
+let coarsePointerMedia: MediaQueryList | null = null
 
 const themeOverrides = {
   common: {
@@ -350,6 +353,34 @@ function readStoredPwaSimulation() {
   return window.sessionStorage.getItem(PWA_SIMULATION_KEY) === '1'
 }
 
+function hasExplicitPwaPreference() {
+  if (typeof window === 'undefined') return false
+  const queryValue = normalizePwaQueryValue(route.query.pwa)
+  if (PWA_QUERY_ENABLE_VALUES.has(queryValue) || PWA_QUERY_DISABLE_VALUES.has(queryValue)) {
+    return true
+  }
+  return window.sessionStorage.getItem(PWA_SIMULATION_KEY) !== null
+}
+
+function isLocalPreviewHost(hostname: string) {
+  return (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '0.0.0.0' ||
+    hostname === '[::1]' ||
+    /^10\./.test(hostname) ||
+    /^192\.168\./.test(hostname) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(hostname)
+  )
+}
+
+function updateAutoPreviewStandaloneMode() {
+  if (typeof window === 'undefined') return
+  const localPreview = isLocalPreviewHost(window.location.hostname)
+  const looksLikeMobilePreview = (menuMedia?.matches ?? false) && (coarsePointerMedia?.matches ?? false)
+  autoPreviewStandalonePwa.value = localPreview && looksLikeMobilePreview && !hasExplicitPwaPreference()
+}
+
 function syncPwaSimulation(queryValue: unknown) {
   if (typeof window === 'undefined') return
   const normalized = normalizePwaQueryValue(queryValue)
@@ -365,7 +396,25 @@ function updateStandaloneMode() {
   if (typeof window === 'undefined') return
   const iosStandalone = 'standalone' in window.navigator && Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone)
   const mediaStandalone = standaloneMedia?.matches ?? false
-  isStandalonePwa.value = iosStandalone || mediaStandalone || simulatedStandalonePwa.value
+  actualStandalonePwa.value = iosStandalone || mediaStandalone
+  updateAutoPreviewStandaloneMode()
+  isStandalonePwa.value =
+    actualStandalonePwa.value || simulatedStandalonePwa.value || autoPreviewStandalonePwa.value
+}
+
+function syncDocumentPwaMode() {
+  if (typeof document === 'undefined') return
+  const root = document.documentElement
+  const body = document.body
+  const isPreviewMode = !actualStandalonePwa.value && isStandalonePwa.value
+  root.dataset.pwaMode = isStandalonePwa.value ? 'standalone' : 'browser'
+  if (isPreviewMode) {
+    root.dataset.pwaPreview = '1'
+    body?.setAttribute('data-pwa-preview', '1')
+  } else {
+    delete root.dataset.pwaPreview
+    body?.removeAttribute('data-pwa-preview')
+  }
 }
 
 watch(
@@ -377,13 +426,19 @@ watch(
   { immediate: true }
 )
 
+watch([isStandalonePwa, actualStandalonePwa], () => {
+  syncDocumentPwaMode()
+})
+
 onMounted(() => {
   if (typeof window === 'undefined') return
   menuMedia = window.matchMedia('(max-width: 960px)')
   standaloneMedia = window.matchMedia('(display-mode: standalone), (display-mode: minimal-ui), (display-mode: fullscreen), (display-mode: window-controls-overlay)')
+  coarsePointerMedia = window.matchMedia('(pointer: coarse), (hover: none)')
   simulatedStandalonePwa.value = readStoredPwaSimulation()
   updateIsMobile()
   updateStandaloneMode()
+  syncDocumentPwaMode()
   if ('addEventListener' in menuMedia) {
     menuMedia.addEventListener('change', updateIsMobile)
   } else {
@@ -393,6 +448,11 @@ onMounted(() => {
     standaloneMedia.addEventListener('change', updateStandaloneMode)
   } else {
     standaloneMedia.addListener(updateStandaloneMode)
+  }
+  if ('addEventListener' in coarsePointerMedia) {
+    coarsePointerMedia.addEventListener('change', updateStandaloneMode)
+  } else {
+    coarsePointerMedia.addListener(updateStandaloneMode)
   }
 })
 
@@ -411,6 +471,13 @@ onBeforeUnmount(() => {
       standaloneMedia.removeListener(updateStandaloneMode)
     }
   }
+  if (coarsePointerMedia) {
+    if ('removeEventListener' in coarsePointerMedia) {
+      coarsePointerMedia.removeEventListener('change', updateStandaloneMode)
+    } else {
+      coarsePointerMedia.removeListener(updateStandaloneMode)
+    }
+  }
 })
 </script>
 
@@ -418,7 +485,7 @@ onBeforeUnmount(() => {
 .app {
   min-height: 100dvh;
   background: transparent;
-  --mobile-topbar-offset: calc(var(--mobile-topbar-height) + 10px + env(safe-area-inset-top));
+  --mobile-topbar-offset: calc(var(--mobile-topbar-height) + 10px + var(--safe-area-top));
 }
 
 .app-topbar {
@@ -432,10 +499,10 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   min-height: var(--mobile-topbar-height);
   padding:
-    calc(8px + env(safe-area-inset-top))
-    calc(16px + env(safe-area-inset-right))
+    calc(8px + var(--safe-area-top))
+    calc(16px + var(--safe-area-right))
     8px
-    calc(16px + env(safe-area-inset-left));
+    calc(16px + var(--safe-area-left));
   background: var(--panel-strong);
   border-bottom: 1px solid var(--stroke);
   backdrop-filter: blur(18px);
@@ -448,8 +515,8 @@ onBeforeUnmount(() => {
 
 .immersive-menu-toggle {
   position: fixed;
-  top: calc(12px + env(safe-area-inset-top));
-  left: calc(12px + env(safe-area-inset-left));
+  top: calc(12px + var(--safe-area-top));
+  left: calc(12px + var(--safe-area-left));
   z-index: 30;
   width: 44px;
   height: 44px;
@@ -462,8 +529,8 @@ onBeforeUnmount(() => {
 
 .immersive-meta-badge {
   position: fixed;
-  top: calc(12px + env(safe-area-inset-top));
-  right: calc(12px + env(safe-area-inset-right));
+  top: calc(12px + var(--safe-area-top));
+  right: calc(12px + var(--safe-area-right));
   z-index: 30;
   display: inline-flex;
   align-items: center;
@@ -651,10 +718,10 @@ onBeforeUnmount(() => {
   .app-topbar {
     gap: 10px;
     padding:
-      calc(6px + env(safe-area-inset-top))
-      calc(14px + env(safe-area-inset-right))
+      calc(6px + var(--safe-area-top))
+      calc(14px + var(--safe-area-right))
       6px
-      calc(14px + env(safe-area-inset-left));
+      calc(14px + var(--safe-area-left));
   }
 
   .app-topbar--image {
@@ -662,13 +729,13 @@ onBeforeUnmount(() => {
   }
 
   .immersive-menu-toggle {
-    top: calc(10px + env(safe-area-inset-top));
-    left: calc(10px + env(safe-area-inset-left));
+    top: calc(10px + var(--safe-area-top));
+    left: calc(10px + var(--safe-area-left));
   }
 
   .immersive-meta-badge {
-    top: calc(10px + env(safe-area-inset-top));
-    right: calc(10px + env(safe-area-inset-right));
+    top: calc(10px + var(--safe-area-top));
+    right: calc(10px + var(--safe-area-right));
   }
 
   .topbar-left {
@@ -694,13 +761,13 @@ onBeforeUnmount(() => {
 
   .page-container--image {
     padding:
-      0 calc(10px + env(safe-area-inset-right))
-      calc(var(--mobile-viewer-toolbar-space) + env(safe-area-inset-bottom))
-      calc(10px + env(safe-area-inset-left));
+      0 calc(10px + var(--safe-area-right))
+      calc(var(--mobile-viewer-toolbar-space) + var(--safe-area-bottom))
+      calc(10px + var(--safe-area-left));
   }
 
   .page-container--with-topbar.page-container--image {
-    padding-top: calc(var(--mobile-topbar-height) + 6px + env(safe-area-inset-top));
+    padding-top: calc(var(--mobile-topbar-height) + 6px + var(--safe-area-top));
   }
 
   .page-container--with-topbar.page-container--collection {

@@ -189,11 +189,11 @@ defineExpose({
   }
 
   .stage {
-    min-height: calc(100dvh - 220px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    min-height: calc(100dvh - 220px - var(--safe-area-top) - var(--safe-area-bottom));
   }
 
   .stage img {
-    max-height: calc(100dvh - 240px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    max-height: calc(100dvh - 240px - var(--safe-area-top) - var(--safe-area-bottom));
   }
 
   .caption {

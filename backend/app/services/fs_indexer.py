@@ -1,8 +1,31 @@
 ﻿from pathlib import Path
 from app.utils.path import to_relative
+from PIL import Image
 
 IMAGE_EXTS = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'}
 ARCHIVE_EXTS = {'.zip', '.7z', '.rar'}
+
+
+def get_image_dimensions(path: Path) -> dict[str, int]:
+    try:
+        with Image.open(path) as image:
+            width, height = image.size
+    except Exception:
+        return {}
+    if width <= 0 or height <= 0:
+        return {}
+    return {
+        'width': width,
+        'height': height
+    }
+
+
+def _build_image_item(path: Path, root: str) -> dict:
+    return {
+        'name': path.name,
+        'path': to_relative(path, root),
+        **get_image_dimensions(path)
+    }
 
 
 def list_folder(folder_path: str, root: str, page: int = 1, page_size: int = 20):
@@ -11,7 +34,7 @@ def list_folder(folder_path: str, root: str, page: int = 1, page_size: int = 20)
         raise FileNotFoundError(f'Folder not found: {folder_path}')
 
     folders = []
-    images_all = []
+    image_entries = []
     archives = []
 
     for entry in sorted(path.iterdir(), key=lambda p: (p.is_file(), p.name.lower())):
@@ -24,20 +47,17 @@ def list_folder(folder_path: str, root: str, page: int = 1, page_size: int = 20)
 
         ext = entry.suffix.lower()
         if ext in IMAGE_EXTS:
-            images_all.append({
-                'name': entry.name,
-                'path': to_relative(entry, root)
-            })
+            image_entries.append(entry)
         elif ext in ARCHIVE_EXTS:
             archives.append({
                 'name': entry.name,
                 'path': to_relative(entry, root)
             })
 
-    total_images = len(images_all)
+    total_images = len(image_entries)
     start = (page - 1) * page_size
     end = start + page_size
-    images = images_all[start:end]
+    images = [_build_image_item(entry, root) for entry in image_entries[start:end]]
 
     return {
         'folder': to_relative(path, root),
