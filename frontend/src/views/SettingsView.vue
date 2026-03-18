@@ -104,6 +104,13 @@ watch(
 }
 
 .settings-section :deep(.page-header) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 0;
+}
+
+.settings-section :deep(.page-header .page-title) {
   display: none;
 }
 

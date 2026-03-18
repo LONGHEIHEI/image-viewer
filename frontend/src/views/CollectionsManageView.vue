@@ -3,7 +3,7 @@
     <div class="page-header">
       <div class="page-title">集合设置</div>
       <div class="page-actions">
-        <n-button type="primary" @click="openCreate">新增集合</n-button>
+        <n-button type="primary" @click="openCreate">新建图集</n-button>
       </div>
     </div>
 
@@ -42,7 +42,7 @@
 
     <n-modal
       v-model:show="showCreate"
-      title="新增集合"
+      title="新建图集"
       :trap-focus="!pickerVisible"
       :style="{ width: 'min(600px, 92vw)' }"
       :transition-name="null"
@@ -453,7 +453,7 @@ async function create() {
       privacy_enabled: newCollection.value.privacy_enabled
     })
     showCreate.value = false
-    notification.success({ title: '创建成功', content: `集合 ${newCollection.value.name} 已创建` })
+    notification.success({ title: '创建成功', content: `图集 ${newCollection.value.name} 已创建` })
     await load()
   } catch (err) {
     error.value = err instanceof Error ? err.message : '创建失败'
