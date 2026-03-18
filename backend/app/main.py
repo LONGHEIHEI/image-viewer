@@ -45,8 +45,8 @@ _FRONTEND_DIST = _resolve_frontend_dist()
 
 @app.on_event('startup')
 def startup() -> None:
-    photo_root = Path(getattr(settings, 'photo_root', '/app/photos'))
-    thumb_cache_dir = Path(getattr(settings, 'thumb_cache_dir', '/app/cache'))
+    photo_root = Path(settings.photo_root)
+    thumb_cache_dir = Path(settings.thumb_cache)
     photo_root.mkdir(parents=True, exist_ok=True)
     thumb_cache_dir.mkdir(parents=True, exist_ok=True)
     db.init_db()
@@ -54,6 +54,11 @@ def startup() -> None:
 
 @app.get('/api/health')
 def health() -> dict[str, str]:
+    return {'status': 'ok'}
+
+
+@app.get('/health')
+def health_compat() -> dict[str, str]:
     return {'status': 'ok'}
 
 
@@ -83,4 +88,3 @@ def spa_fallback(full_path: str):
         return FileResponse(target)
 
     return FileResponse(dist_root / 'index.html')
-

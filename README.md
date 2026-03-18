@@ -116,12 +116,19 @@ docker compose up -d --build
 
 访问：
 - 前端：`http://localhost:8480`
-- 健康检查：`http://localhost:8480/health`
+- 健康检查：`http://localhost:8480/health`（兼容探针）
+- API 健康检查：`http://localhost:8480/api/health`
 
 说明：
-- 现在 Docker 默认是单个 `app` 容器，内部同时运行 FastAPI 和 Nginx
-- 不需要再分别启动前后端两个容器
-- 如果你仍想从 `docker/` 目录执行，也可以继续使用 `docker/docker-compose.yml`
+- Docker 默认启动单个 `app` 容器（FastAPI 直接提供前端静态资源）
+- 对外端口可通过环境变量 `IMAGE_VIEWS_PORT` 调整，例如：
+  ```powershell
+  $env:IMAGE_VIEWS_PORT="8290"
+  docker compose up -d --build
+  ```
+  ```bash
+  IMAGE_VIEWS_PORT=8290 docker compose up -d --build
+  ```
 
 ## 中文乱码处理（重点）
 1. **源文件保存为 UTF-8**（推荐 UTF-8 无 BOM）

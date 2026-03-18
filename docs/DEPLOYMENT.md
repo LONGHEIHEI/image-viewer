@@ -1,26 +1,37 @@
-﻿# Deployment
+# Deployment
 
 ## Docker Compose
 ```bash
 docker compose up -d --build
 ```
 
-默认启动的是单个 `app` 服务，容器内同时运行：
-- FastAPI（监听容器内 `127.0.0.1:8010`）
-- Nginx（对外暴露 `80`，统一转发 `/api` 和静态前端）
+默认启动单个 `app` 服务：
+- FastAPI 监听容器内 `0.0.0.0:8010`
+- 同时提供后端 API 与前端静态文件
 
 ## Volumes
-- `./photos:/data/photos` (photo root)
-- `./cache:/data/cache` (thumbnails)
-- `./data:/app/data` (SQLite database)
+- `${IMAGE_VIEWS_DATA_DIR:-./backend/data}:/app/backend/data` (SQLite database)
+- `${IMAGE_VIEWS_PHOTOS_DIR:-./photos}:/app/photos:ro` (photo root, read-only)
+- `${IMAGE_VIEWS_CACHE_DIR:-./cache}:/app/cache` (thumbnails)
+
+建议先在项目根目录准备 `photos/` 与 `cache/`，`backend/data/` 会自动创建。
+
+## Port
+- 默认映射 `${IMAGE_VIEWS_PORT:-8480}:8010`
+- 默认访问地址：`http://localhost:8480`
+- 可通过环境变量 `IMAGE_VIEWS_PORT` 覆盖默认端口
 
 ## Environment
-- `PHOTO_ROOT=/data/photos`
-- `THUMB_CACHE=/data/cache`
+- `PHOTO_ROOT=/app/photos`
+- `THUMB_CACHE=/app/cache`
 - `THUMB_SIZE=320`
-- `DB_PATH=data/app.db`
+- `DB_PATH=/app/backend/data/app.db`
 - `SECRET_KEY` (JWT key)
 - `ADMIN_USERNAME` / `ADMIN_PASSWORD`
+
+## Health Check
+- `GET /health`
+- `GET /api/health`
 
 ## Archive Dependencies
 - ZIP works out of the box
@@ -31,8 +42,6 @@ Install full dependencies locally:
 cd backend
 pip install -r requirements-full.txt
 ```
-
-If you need 7Z/RAR in Docker, change Dockerfile to install `requirements-full.txt`.
 
 Local setup scripts:
 - `scripts/install-archive-deps.ps1`
@@ -45,3 +54,4 @@ Local setup scripts:
 - `docker compose up -d --build` completes without errors
 - Visit `http://localhost:8480` for the UI
 - Visit `http://localhost:8480/health` for backend health
+- Optional: visit `http://localhost:8480/api/health`
