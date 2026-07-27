@@ -42,8 +42,7 @@ USER appuser
 
 ENV DB_PATH=/app/backend/data/app.db \
     PHOTO_ROOT=/app/photos \
-    PHOTOS_DIR=/app/photos \
-    CACHE_DIR=/app/cache
+    THUMB_CACHE=/app/cache
 
 EXPOSE 8010
 

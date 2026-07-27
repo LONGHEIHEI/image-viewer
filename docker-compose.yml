@@ -15,11 +15,6 @@ services:
       - "${IMAGE_VIEWS_PORT:-8480}:8010"
     environment:
       TZ: Asia/Shanghai
-      DB_PATH: /app/backend/data/app.db
-      PHOTO_ROOT: /app/photos
-      PHOTOS_DIR: /app/photos
-      THUMB_CACHE: /app/cache
-      CACHE_DIR: /app/cache
     volumes:
       - /data/docker/image-views/data:/app/backend/data
       - /mnt/pool1/download/picture:/app/photos:ro

@@ -1,8 +1,8 @@
 ﻿from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    photo_root: str = '/data/photos'
-    thumb_cache: str = '/data/cache'
+    photo_root: str = 'photos'
+    thumb_cache: str = 'cache'
     thumb_size: int = 320
     db_path: str = 'data/app.db'
     secret_key: str = 'dev-secret-change-me'
