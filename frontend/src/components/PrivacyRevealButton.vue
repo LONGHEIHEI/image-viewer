@@ -60,10 +60,10 @@ defineEmits<{
 }
 
 .privacy-eye-button--active {
-  --eye-color: rgba(255, 106, 61, 0.94);
-  border-color: rgba(255, 106, 61, 0.34);
+  --eye-color: rgba(194, 101, 75, 0.94);
+  border-color: rgba(194, 101, 75, 0.32);
   background: rgba(255, 248, 244, 0.94);
-  box-shadow: 0 10px 20px rgba(255, 106, 61, 0.18);
+  box-shadow: 0 10px 20px rgba(194, 101, 75, 0.16);
 }
 
 .privacy-eye-button:focus-visible {

@@ -145,7 +145,7 @@ defineExpose({
   justify-content: center;
   overflow: hidden;
   width: 100%;
-  min-height: calc(100dvh - 210px);
+  min-height: 0;
   touch-action: none;
   cursor: grab;
 }
@@ -163,7 +163,6 @@ defineExpose({
 
 .stage img {
   max-width: min(100%, 1100px);
-  max-height: calc(100dvh - 230px);
   border-radius: 0;
   display: block;
   transition: transform 0.05s linear;

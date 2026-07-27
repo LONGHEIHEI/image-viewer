@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse
 
 from app.config import Settings
 from app.services import db
+from app.services.auth import ensure_admin_user
 
 settings = Settings()
 app = FastAPI(title='Image Views')
@@ -50,6 +51,7 @@ def startup() -> None:
     photo_root.mkdir(parents=True, exist_ok=True)
     thumb_cache_dir.mkdir(parents=True, exist_ok=True)
     db.init_db()
+    ensure_admin_user()
 
 
 @app.get('/api/health')

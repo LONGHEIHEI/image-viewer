@@ -66,7 +66,7 @@ function handleClick() {
 }
 
 .tag.archive {
-  background: rgba(255, 106, 61, 0.12);
+  background: rgba(194, 101, 75, 0.12);
   color: var(--accent);
 }
 

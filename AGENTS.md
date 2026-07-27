@@ -27,15 +27,15 @@
 - 后端：
   - `cd backend`
   - `python -m venv .venv`
-  - `. .venv\Scripts\activate`
+  - macOS/Linux 激活: `. .venv/bin/activate`，Windows: `. .venv\\Scripts\\activate`
   - `pip install -r requirements.txt`
-  - `uvicorn app.main:app --reload --host 0.0.0.0 --port 8010`
+  - 一键启动: `./run.sh`（自动创建 venv + 安装依赖 + 设置环境变量）
+  - 手动启动: `PHOTO_ROOT="../photos" THUMB_CACHE="../cache" DB_PATH="../data/app.db" uvicorn app.main:app --reload --host localhost --port 8010`
 - 前端：
   - `cd frontend`
   - `npm install`
-  - `npm run dev`
+  - `npm run dev`（或 `./run.sh`）
 - 默认管理账号：`admin` / `admin`
-
 **编码与提交约束**
 - 中文内容必须以 UTF-8 保存；必要时使用 PowerShell UTF-8 输出设置以避免乱码。
 - 修改需尽量小而清晰，避免大范围重构。

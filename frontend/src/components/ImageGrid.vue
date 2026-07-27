@@ -1,13 +1,9 @@
+
 <template>
-  <div class="masonry-grid" :style="{ '--masonry-columns': String(columnCount) }">
-    <div
-      v-for="(column, columnIndex) in masonryColumns"
-      :key="`column-${columnIndex}`"
-      :ref="(el) => setColumnRef(el, columnIndex)"
-      class="masonry-column"
-    >
+  <div ref="gridRef" class="masonry">
+    <div v-for="(col, ci) in columns" :key="ci" class="masonry-col">
       <div
-        v-for="image in column"
+        v-for="image in col"
         :key="getImageKey(image)"
         class="tile"
         @click="handleTileClick(image)"
@@ -36,7 +32,7 @@
             :alt="image.name"
             loading="lazy"
             decoding="async"
-            @load="handleImageLoad($event, getImageKey(image))"
+            @load="handleImageLoad(getImageKey(image))"
             @error="handleImageError(getImageKey(image))"
           />
           <button
@@ -91,7 +87,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { NDropdown, NModal } from 'naive-ui'
 import type { FolderItem } from '../api/client'
 import { usePrivacyReveal } from '../composables/usePrivacyReveal'
@@ -115,40 +111,38 @@ const emit = defineEmits<{
   (event: 'open-image', path: string): void
 }>()
 
+const GAP = 10
+
 const menuVisible = ref(false)
 const menuX = ref(0)
 const menuY = ref(0)
 const selected = ref<FolderItem | null>(null)
 const propsVisible = ref(false)
-const columnCount = ref(2)
-const masonryColumns = ref<FolderItem[][]>([])
-const columnRefs = ref<HTMLElement[]>([])
-// Height sampling is only used for future distribution estimates; it doesn't need to be reactive.
-const imageHeights = new Map<string, number>()
+const columnCount = ref(getColumnCount())
+const gridWidth = ref(estimateGridWidth())
 const imageStates = ref<Record<string, 'loading' | 'ready' | 'failed'>>({})
-let heightSum = 0
-let heightCount = 0
 const revealStorageKey = computed(() => props.privacyStorageKey || '')
 const privacyEnabled = computed(() => Boolean(props.privacyEnabled))
 const favoriteEnabled = computed(() => Boolean(props.favoriteEnabled && props.toggleFavorite && props.isFavorite))
 const { isRevealed, reveal } = usePrivacyReveal(revealStorageKey)
 
+const gridRef = ref<HTMLElement | null>(null)
+
 const menuOptions = [{ label: '属性', key: 'props' }]
-let renderedFirstPath = ''
-let renderedLastPath = ''
-let renderedCount = 0
+
+function estimateGridWidth() {
+  if (typeof window === 'undefined') return 800
+  // Rough estimate: viewport minus sidebar (~240px) minus page gutters (~32px)
+  return Math.max(360, window.innerWidth - 280)
+}
 
 function getColumnCount() {
   if (typeof window === 'undefined') return 2
-  if (window.innerWidth >= 1280) return 4
-  if (window.innerWidth >= 860) return 3
+  if (window.innerWidth >= 1600) return 5
+  if (window.innerWidth >= 1100) return 4
+  if (window.innerWidth >= 720) return 3
   if (window.innerWidth < 360) return 1
   return 2
-}
-
-function getAverageImageHeight() {
-  if (!heightCount) return 220
-  return heightSum / heightCount
 }
 
 function getImageKey(image: FolderItem) {
@@ -167,15 +161,6 @@ function getPrivacyKey(image: FolderItem) {
   return `image:${getImageActionPath(image)}`
 }
 
-function estimateImageHeight(image: FolderItem) {
-  const sampledHeight = imageHeights.get(getImageKey(image))
-  if (sampledHeight !== undefined) return sampledHeight
-  if (hasImageSize(image)) {
-    return 220 * (image.height / image.width)
-  }
-  return getAverageImageHeight()
-}
-
 function hasImageSize(image: FolderItem): image is SizedFolderItem {
   const sizedImage = image as SizedFolderItem
   return (
@@ -191,41 +176,6 @@ function getThumbStyle(image: FolderItem) {
   return {
     aspectRatio: `${image.width} / ${image.height}`
   }
-}
-
-function readColumnHeights() {
-  return Array.from({ length: columnCount.value }, (_, index) => columnRefs.value[index]?.offsetHeight ?? 0)
-}
-
-function findShortestColumn(heights: number[]) {
-  let target = 0
-  for (let index = 1; index < heights.length; index += 1) {
-    if (heights[index] < heights[target]) {
-      target = index
-    }
-  }
-  return target
-}
-
-function distributeImages(images: FolderItem[], initialHeights?: number[]) {
-  const columns = Array.from({ length: columnCount.value }, () => [] as FolderItem[])
-  const heights = initialHeights ? [...initialHeights] : Array.from({ length: columnCount.value }, () => 0)
-
-  for (const image of images) {
-    const target = findShortestColumn(heights)
-    columns[target].push(image)
-    heights[target] += estimateImageHeight(image) + 10
-  }
-
-  return columns
-}
-
-function setColumnRef(element: Element | null, index: number) {
-  if (element instanceof HTMLElement) {
-    columnRefs.value[index] = element
-    return
-  }
-  columnRefs.value.splice(index, 1)
 }
 
 function getImageState(path: string) {
@@ -249,27 +199,17 @@ function syncImageStates(images: FolderItem[]) {
 }
 
 function syncColumnCount() {
-  const nextCount = getColumnCount()
-  if (nextCount === columnCount.value) return
-  columnCount.value = nextCount
+  columnCount.value = getColumnCount()
+  // Re-estimate width when column count changes (might mean viewport changed)
+  if (gridRef.value) {
+    gridWidth.value = gridRef.value.clientWidth
+  } else {
+    gridWidth.value = estimateGridWidth()
+  }
 }
 
-function handleImageLoad(event: Event, path: string) {
-  const image = event.target as HTMLImageElement | null
-  if (!image) return
+function handleImageLoad(path: string) {
   updateImageState(path, 'ready')
-  const renderedWidth = image.clientWidth || image.naturalWidth || 1
-  const renderedHeight =
-    image.clientHeight ||
-    (image.naturalWidth ? renderedWidth * (image.naturalHeight / image.naturalWidth) : renderedWidth)
-  const previous = imageHeights.get(path)
-  if (previous !== undefined) {
-    heightSum -= previous
-  } else {
-    heightCount += 1
-  }
-  imageHeights.set(path, renderedHeight)
-  heightSum += renderedHeight
 }
 
 function handleImageError(path: string) {
@@ -290,46 +230,55 @@ async function handleFavoriteToggle(image: FolderItem) {
   await props.toggleFavorite(getImageActionPath(image))
 }
 
+const colWidth = computed(() => {
+  const cols = columnCount.value
+  if (cols <= 1) return gridWidth.value || 300
+  return (gridWidth.value - GAP * (cols - 1)) / cols
+})
+
+function estimateHeight(image: FolderItem): number {
+  if (hasImageSize(image)) {
+    return colWidth.value / (image.width! / image.height!)
+  }
+  return colWidth.value * 0.75
+}
+
+// Round-robin distribution: image i goes to column i % cols.
+// Preserves natural left→right, top→bottom reading order.
+const columns = computed(() => {
+  const images = props.images
+  const cols = columnCount.value
+  if (!images.length) return []
+  if (cols <= 1) return [images]
+
+  const result: FolderItem[][] = Array.from({ length: cols }, () => [])
+
+  for (let i = 0; i < images.length; i++) {
+    result[i % cols].push(images[i])
+  }
+
+  return result
+})
+
 watch(
   () => props.images,
-  async (images) => {
+  (images) => {
     syncImageStates(images)
-    const isAppend =
-      renderedCount > 0 &&
-      images.length > renderedCount &&
-      getImageKey(images[0]) === renderedFirstPath &&
-      getImageKey(images[renderedCount - 1]) === renderedLastPath
-
-    if (isAppend) {
-      const appended = images.slice(renderedCount)
-      if (appended.length) {
-        await nextTick()
-        const initialHeights = readColumnHeights()
-        const appendedColumns = distributeImages(appended, initialHeights)
-        masonryColumns.value = masonryColumns.value.map((column, index) => [...column, ...appendedColumns[index]])
-      }
-      renderedCount = images.length
-      renderedLastPath = images[images.length - 1] ? getImageKey(images[images.length - 1]) : renderedLastPath
-      return
-    }
-
-    masonryColumns.value = images.length ? distributeImages(images) : []
-    renderedCount = images.length
-    renderedFirstPath = images[0] ? getImageKey(images[0]) : ''
-    renderedLastPath = images[images.length - 1] ? getImageKey(images[images.length - 1]) : ''
   },
   { immediate: true }
 )
 
-watch(columnCount, () => {
-  masonryColumns.value = props.images.length ? distributeImages(props.images) : []
-  renderedCount = props.images.length
-  renderedFirstPath = props.images[0] ? getImageKey(props.images[0]) : ''
-  renderedLastPath = props.images[props.images.length - 1] ? getImageKey(props.images[props.images.length - 1]) : ''
-})
+let resizeObserver: ResizeObserver | null = null
 
 onMounted(() => {
   syncColumnCount()
+  if (gridRef.value) {
+    gridWidth.value = gridRef.value.clientWidth
+    resizeObserver = new ResizeObserver(() => {
+      if (gridRef.value) gridWidth.value = gridRef.value.clientWidth
+    })
+    resizeObserver.observe(gridRef.value)
+  }
   if (typeof window !== 'undefined') {
     window.addEventListener('resize', syncColumnCount)
   }
@@ -338,6 +287,10 @@ onMounted(() => {
 onBeforeUnmount(() => {
   if (typeof window !== 'undefined') {
     window.removeEventListener('resize', syncColumnCount)
+  }
+  if (resizeObserver) {
+    resizeObserver.disconnect()
+    resizeObserver = null
   }
 })
 
@@ -367,19 +320,19 @@ function fileExt(name?: string) {
 </script>
 
 <style scoped>
-.masonry-grid {
-  --masonry-columns: 2;
-  display: grid;
-  grid-template-columns: repeat(var(--masonry-columns), minmax(0, 1fr));
+.masonry {
+  display: flex;
   gap: 10px;
-  align-items: start;
+  align-items: flex-start;
+  width: 100%;
 }
 
-.masonry-column {
-  display: grid;
-  gap: 10px;
-  align-content: start;
+.masonry-col {
+  flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .tile {
@@ -512,9 +465,9 @@ function fileExt(name?: string) {
 
 .favorite-toggle--active {
   border-color: rgba(255, 123, 84, 0.78);
-  background: linear-gradient(135deg, rgba(255, 106, 61, 0.96), rgba(255, 138, 97, 0.9));
+  background: linear-gradient(135deg, rgba(194, 101, 75, 0.96), rgba(210, 130, 105, 0.9));
   color: #fff;
-  box-shadow: 0 16px 34px rgba(255, 106, 61, 0.32);
+  box-shadow: 0 16px 34px rgba(194, 101, 75, 0.28);
 }
 
 .favorite-toggle--active .favorite-toggle__icon {
@@ -585,8 +538,11 @@ function fileExt(name?: string) {
 }
 
 @media (max-width: 960px) {
-  .masonry-grid,
-  .masonry-column {
+  .masonry {
+    gap: 8px;
+  }
+
+  .masonry-col {
     gap: 8px;
   }
 

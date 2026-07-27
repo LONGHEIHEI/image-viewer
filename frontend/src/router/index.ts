@@ -13,7 +13,7 @@ export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/login', component: LoginView },
-    { path: '/', redirect: '/collections' },
+    { path: '/', redirect: '/library' },
     { path: '/library', component: LibraryView, meta: { requiresAuth: true, topLevel: true } },
     { path: '/folder', component: FolderView, meta: { requiresAuth: true, topLevel: false } },
     { path: '/image', component: ImageView, meta: { requiresAuth: true, topLevel: false } },

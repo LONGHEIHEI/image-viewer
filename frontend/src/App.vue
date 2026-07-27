@@ -39,9 +39,6 @@
             <div class="topbar-meta" v-if="showTopbarMediaCount">
               {{ topbarMediaCount }}
             </div>
-            <div v-else-if="showBrandHeader" class="brand brand--topbar">
-              <div class="logo">IV</div>
-            </div>
           </div>
         </div>
 
@@ -193,10 +190,10 @@ let coarsePointerMedia: MediaQueryList | null = null
 
 const themeOverrides = {
   common: {
-    primaryColor: '#ff6a3d',
-    primaryColorHover: '#ff7b54',
-    primaryColorPressed: '#f85b2a',
-    primaryColorSuppl: '#ff6a3d',
+    primaryColor: '#c2654b',
+    primaryColorHover: '#d47860',
+    primaryColorPressed: '#a8553f',
+    primaryColorSuppl: '#c2654b',
     borderRadius: '12px',
     fontFamily: "'Archivo', Arial, sans-serif",
     fontFamilyMono: "'Space Grotesk', 'Archivo', Arial, sans-serif"
@@ -229,14 +226,15 @@ const showMenu = computed(() => {
 const isImageRoute = computed(() => route.path === '/image')
 const isCollectionRoute = computed(() => route.path.startsWith('/collection/'))
 const isArchiveRoute = computed(() => route.path === '/folder' && Boolean(route.query.archive))
+const isLibrarySubfolder = computed(() => route.path === '/library' && Boolean(route.query.path))
 const isAlbumBrowseRoute = computed(
   () => isCollectionRoute.value || (route.path === '/folder' && Boolean(route.query.collection))
 )
 const useImmersiveMobileChrome = computed(
   () => showMenu.value && isMobile.value && isStandalonePwa.value && isImageRoute.value
 )
-const showMobileTopbar = computed(() => showMenu.value && isMobile.value && !useImmersiveMobileChrome.value)
-const showTopbarBackButton = computed(() => isImageRoute.value || isCollectionRoute.value || isArchiveRoute.value)
+const showMobileTopbar = computed(() => showMenu.value && isMobile.value && !useImmersiveMobileChrome.value && !isImageRoute.value)
+const showTopbarBackButton = computed(() => isCollectionRoute.value || isArchiveRoute.value || isLibrarySubfolder.value)
 const showFloatingBackButton = computed(() => useImmersiveMobileChrome.value)
 const showFloatingMenuButton = computed(() => false)
 const showFloatingNavButton = computed(() => showFloatingBackButton.value || showFloatingMenuButton.value)
@@ -272,6 +270,7 @@ const currentMobileTitle = computed(() => {
     const archive = String(route.query.archive || gallery.archivePath || '')
     return archive ? basename(archive) : '内容'
   }
+  if (isLibrarySubfolder.value) return basename(String(route.query.path || ''))
   if (route.path === '/image') return ''
   if (route.path.startsWith('/collection/')) return gallery.collectionName || '图集'
   if (route.path === '/favorites') return '收藏'
@@ -330,6 +329,7 @@ function renderMenuIcon(type: 'library' | 'collections' | 'favorites' | 'setting
 
 const menuOptions = computed(() => {
   const base = [
+    { label: '图库', key: '/library', icon: renderMenuIcon('library') },
     { label: '图集', key: '/collections', icon: renderMenuIcon('collections') },
     { label: '收藏', key: '/favorites', icon: renderMenuIcon('favorites') }
   ]
@@ -342,6 +342,7 @@ const menuOptions = computed(() => {
 const activeMenu = computed(() => {
   if (route.path.startsWith('/settings')) return '/settings'
   if (route.path.startsWith('/favorites')) return '/favorites'
+  if (route.path === '/library' || route.path === '/folder' || route.path === '/image') return '/library'
   return '/collections'
 })
 
@@ -351,6 +352,12 @@ function handleMenu(key: string) {
 }
 
 function goBack() {
+  if (isLibrarySubfolder.value) {
+    const currentPath = String(route.query.path || '')
+    const parentPath = currentPath.split('/').slice(0, -1).join('/')
+    router.push({ path: '/library', query: parentPath ? { path: parentPath } : {} })
+    return
+  }
   router.back()
 }
 
@@ -771,13 +778,13 @@ onBeforeUnmount(() => {
   height: 36px;
   width: 36px;
   border-radius: var(--radius-md);
-  background: linear-gradient(140deg, var(--accent), #ffb84a);
+  background: linear-gradient(140deg, var(--accent), #d4a574);
   color: #fff;
   font-weight: 700;
   font-family: 'Space Grotesk', Arial, sans-serif;
   display: grid;
   place-items: center;
-  box-shadow: 0 10px 20px rgba(255, 106, 61, 0.35);
+  box-shadow: 0 10px 20px rgba(194, 101, 75, 0.28);
 }
 
 .title {

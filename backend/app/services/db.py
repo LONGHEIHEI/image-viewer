@@ -1,7 +1,7 @@
 from pathlib import Path
 import sqlite3
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from app.config import Settings
 
 settings = Settings()
@@ -163,7 +163,7 @@ def create_user(username: str, password_hash: str, is_admin: bool, allowed_paths
     try:
         conn.execute(
             'INSERT INTO users (username, password_hash, is_admin, allowed_paths, created_at) VALUES (?, ?, ?, ?, ?)',
-            (username, password_hash, 1 if is_admin else 0, json.dumps(allowed_paths), datetime.utcnow().isoformat())
+            (username, password_hash, 1 if is_admin else 0, json.dumps(allowed_paths), datetime.now(timezone.utc).isoformat())
         )
         conn.commit()
     finally:
@@ -252,7 +252,7 @@ def create_collection(
                 cover_path,
                 1 if aggregate_subdirs else 0,
                 1 if privacy_enabled else 0,
-                datetime.utcnow().isoformat()
+                datetime.now(timezone.utc).isoformat()
             )
         )
         conn.commit()
@@ -346,7 +346,7 @@ def save_favorite(
 ):
     conn = get_connection()
     try:
-        timestamp = datetime.utcnow().isoformat()
+        timestamp = datetime.now(timezone.utc).isoformat()
         conn.execute(
             '''
             INSERT INTO favorites (

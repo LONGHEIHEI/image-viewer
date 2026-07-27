@@ -71,7 +71,7 @@ async function submit() {
       title: '登录成功',
       content: `欢迎你，${auth.user?.username || username.value}`
     })
-    router.push('/collections')
+    router.push('/library')
   } catch {
     notification.error({
       title: '登录失败',
@@ -133,7 +133,7 @@ onBeforeUnmount(() => {
   width: 52px;
   height: 52px;
   border-radius: 16px;
-  background: linear-gradient(140deg, var(--accent), #ffb84a);
+  background: linear-gradient(140deg, var(--accent), #d4a574);
   color: #fff;
   display: grid;
   place-items: center;
@@ -141,7 +141,7 @@ onBeforeUnmount(() => {
   font-size: 20px;
   font-weight: 700;
   letter-spacing: 0.04em;
-  box-shadow: 0 14px 28px rgba(255, 106, 61, 0.26);
+  box-shadow: 0 14px 28px rgba(194, 101, 75, 0.24);
 }
 
 .brand-copy {

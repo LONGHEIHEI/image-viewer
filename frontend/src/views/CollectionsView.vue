@@ -43,7 +43,21 @@
       </div>
     </div>
 
-    <div v-else class="empty">暂无可访问的图集</div>
+    <div v-else class="empty-state">
+      <div class="empty-state-icon">
+        <svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <rect x="7" y="7" width="10" height="10" rx="1"/>
+          <circle cx="12" cy="12" r="1.5"/>
+        </svg>
+      </div>
+      <div class="empty-state-title">暂无图集</div>
+      <div class="empty-state-desc">
+        图集可以将不同目录的图片聚合展示
+        <template v-if="auth.user?.is_admin">，前往设置页创建第一个图集</template>
+      </div>
+      <n-button v-if="auth.user?.is_admin" type="primary" size="small" @click="router.push('/settings')">去创建图集</n-button>
+    </div>
   </div>
 </template>
 
@@ -52,6 +66,7 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { NButton } from 'naive-ui'
 import { getCollectionsAvailable, collectionCoverUrl, type CollectionSummary } from '../api/client'
+import { useAuthStore } from '../store/auth'
 import { usePrivacyReveal } from '../composables/usePrivacyReveal'
 
 const router = useRouter()
@@ -59,6 +74,7 @@ const collections = ref<CollectionSummary[]>([])
 const loading = ref(true)
 const loadingPlaceholders = Array.from({ length: 6 }, (_, index) => index)
 const { isRevealed, reveal } = usePrivacyReveal('collection-cover-privacy')
+const auth = useAuthStore()
 
 onMounted(async () => {
   try {
@@ -242,6 +258,34 @@ function onCoverLoad(event: Event) {
   background: var(--placeholder-surface);
 }
 
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 56px 24px;
+  text-align: center;
+}
+
+.empty-state-icon {
+  color: rgba(92, 102, 114, 0.3);
+  margin-bottom: 4px;
+}
+
+.empty-state-title {
+  font-family: 'Space Grotesk', Arial, sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.empty-state-desc {
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 300px;
+  line-height: 1.5;
+}
+
 @media (max-width: 960px) {
   .collections-grid {
     grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
@@ -250,6 +294,11 @@ function onCoverLoad(event: Event) {
 
   .collection-card {
     padding: 0 0 10px;
+  }
+
+  .empty-state {
+    padding: 48px 20px;
+    gap: 8px;
   }
 }
 
