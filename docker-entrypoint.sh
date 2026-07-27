@@ -1,17 +1,21 @@
 #!/usr/bin/env bash
 set -e
 
-# Ensure data/cache directories exist with correct ownership.
-# These may be overridden by volume mounts at runtime, so we fix permissions
-# at container startup rather than during image build.
+# Fix directory ownership for volume mounts. Docker creates bind-mount
+# directories as root; chown them so appuser can read/write.
 for dir in /app/backend/data /app/photos /app/cache; do
-    if [ ! -d "$dir" ]; then
-        mkdir -p "$dir"
-    fi
-    # If the directory isn't writable, try to fix it via rootless fallback
-    if [ ! -w "$dir" ]; then
-        echo "WARNING: $dir is not writable by appuser. Check host volume permissions." >&2
+    mkdir -p "$dir"
+    owner=$(stat -c '%u' "$dir" 2>/dev/null || echo "0")
+    if [ "$owner" != "10001" ]; then
+        chown 10001:10001 "$dir" 2>/dev/null || true
     fi
 done
 
-exec "$@"
+# Drop privileges to appuser and exec the CMD.
+exec python3 -c "
+import os, sys
+os.setgid(10001)
+os.setgroups([])
+os.setuid(10001)
+os.execvp(sys.argv[1], sys.argv[1:])
+" "$@"

@@ -30,7 +30,6 @@ RUN pip install --no-cache-dir --no-compile -r /tmp/requirements.txt
 
 COPY backend/app/ /app/backend/app/
 COPY --from=frontend-builder /build/frontend/dist /app/frontend/dist
-# Some backend setups read static files from backend/app/static.
 COPY --from=frontend-builder /build/frontend/dist /app/backend/app/static
 RUN find /app/backend/app/static -type f -name "*.map" -delete
 
@@ -39,8 +38,6 @@ RUN useradd --create-home --uid 10001 appuser
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-USER appuser
-
 ENV DB_PATH=/app/backend/data/app.db \
     PHOTO_ROOT=/app/photos \
     THUMB_CACHE=/app/cache
@@ -48,7 +45,7 @@ ENV DB_PATH=/app/backend/data/app.db \
 EXPOSE 8010
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD python -c "import urllib.request; urllib.request.urlopen('http://***.***.***.***:8010/docs', timeout=3)" || exit 1
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://***.***.***.***:8010/api/health', timeout=3)" || exit 1
 
 WORKDIR /app/backend
 ENTRYPOINT ["docker-entrypoint.sh"]
