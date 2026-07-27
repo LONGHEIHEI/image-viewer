@@ -1,4 +1,4 @@
-﻿from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 import hashlib
 from passlib.context import CryptContext
 import jwt

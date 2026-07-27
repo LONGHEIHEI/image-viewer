@@ -34,9 +34,10 @@ COPY --from=frontend-builder /build/frontend/dist /app/frontend/dist
 COPY --from=frontend-builder /build/frontend/dist /app/backend/app/static
 RUN find /app/backend/app/static -type f -name "*.map" -delete
 
-RUN useradd --create-home --uid 10001 appuser \
-  && mkdir -p /app/backend/data /app/photos /app/cache /data /cache \
-  && chown -R appuser:appuser /app /data /cache
+RUN useradd --create-home --uid 10001 appuser
+
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 USER appuser
 
@@ -47,7 +48,8 @@ ENV DB_PATH=/app/backend/data/app.db \
 EXPOSE 8010
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8010/docs', timeout=3)" || exit 1
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://***.***.***.***:8010/docs', timeout=3)" || exit 1
 
 WORKDIR /app/backend
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8010"]
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["uvicorn", "app.main:app", "--host", "***.***.***.***", "--port", "8010"]
