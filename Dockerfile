@@ -19,7 +19,7 @@ WORKDIR /app
 ARG INSTALL_ARCHIVE_TOOLS=1
 RUN set -eux; \
   apt-get update; \
-  apt-get install -y --no-install-recommends ca-certificates; \
+  apt-get install -y --no-install-recommends ca-certificates gosu; \
   if [ "$INSTALL_ARCHIVE_TOOLS" = "1" ]; then \
     apt-get install -y --no-install-recommends p7zip-full unrar-free; \
   fi; \

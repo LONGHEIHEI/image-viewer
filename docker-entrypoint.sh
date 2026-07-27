@@ -11,11 +11,4 @@ for dir in /app/backend/data /app/photos /app/cache; do
     fi
 done
 
-# Drop privileges to appuser and exec the CMD.
-exec python3 -c "
-import os, sys
-os.setgid(10001)
-os.setgroups([])
-os.setuid(10001)
-os.execvp(sys.argv[1], sys.argv[1:])
-" "$@"
+exec gosu appuser "$@"
