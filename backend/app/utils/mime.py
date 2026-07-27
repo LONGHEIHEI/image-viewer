@@ -1,4 +1,4 @@
-﻿import mimetypes
+import mimetypes
 
 
 def guess_mime(path: str) -> str:

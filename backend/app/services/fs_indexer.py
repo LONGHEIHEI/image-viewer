@@ -1,4 +1,4 @@
-﻿from pathlib import Path
+from pathlib import Path
 from app.utils.path import to_relative
 from PIL import Image
 
