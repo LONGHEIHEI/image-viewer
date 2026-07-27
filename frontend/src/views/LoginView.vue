@@ -1,111 +1,88 @@
 <template>
   <div class="login">
-    <n-card class="panel card" :bordered="false">
-      <div class="brand-header">
-        <div class="brand-mark" aria-hidden="true">IV</div>
-        <div class="brand-copy">
-          <div class="brand-name">轻图</div>
-          <div class="brand-subtitle">轻量图片浏览器</div>
-        </div>
+    <div class="login-card">
+      <div class="login-brand">
+        <div class="login-mark">IV</div>
+        <h1 class="login-title">轻图</h1>
+        <p class="login-desc">登录以继续浏览</p>
       </div>
-      <n-form @submit.prevent="submit">
-        <n-form-item label="用户名">
-          <n-input
-            v-model:value="username"
-            placeholder="请输入用户名"
-            :input-props="usernameInputProps"
-            @keydown.enter.prevent="submit"
+
+      <form class="login-form" autocomplete="on" @submit.prevent="handleSubmit">
+        <div class="field">
+          <input
+            ref="usernameRef"
+            v-model="username"
+            class="input"
+            type="text"
+            name="username"
+            autocomplete="username"
+            placeholder="用户名"
+            autocapitalize="none"
+            autocorrect="off"
+            spellcheck="false"
+            @keydown.enter="handleSubmit"
           />
-        </n-form-item>
-        <n-form-item label="密码">
-          <n-input
-            v-model:value="password"
-            type="password"
-            placeholder="请输入密码"
-            :input-props="passwordInputProps"
-            @keydown.enter.prevent="submit"
-          />
-        </n-form-item>
-        <div :class="['actions', { 'actions--pwa': isStandalonePwa }]">
-          <n-button type="primary" :block="!isStandalonePwa" :loading="auth.loading" @click="submit">登录</n-button>
         </div>
-      </n-form>
-    </n-card>
+        <div class="field">
+          <input
+            v-model="password"
+            class="input"
+            type="password"
+            name="password"
+            autocomplete="current-password"
+            placeholder="密码"
+            autocapitalize="none"
+            autocorrect="off"
+            spellcheck="false"
+            @keydown.enter="handleSubmit"
+          />
+        </div>
+        <button
+          type="submit"
+          class="submit-btn"
+          :disabled="auth.loading"
+        >
+          <span v-if="auth.loading" class="spinner"></span>
+          <span>{{ auth.loading ? '登录中...' : '登 录' }}</span>
+        </button>
+      </form>
+
+      <p v-if="auth.error" class="login-error">{{ auth.error }}</p>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { NCard, NForm, NFormItem, NInput, NButton, useNotification } from 'naive-ui'
+import { useNotification } from 'naive-ui'
 import { useAuthStore } from '../store/auth'
 
 const auth = useAuthStore()
 const router = useRouter()
 const notification = useNotification()
+
 const username = ref('')
 const password = ref('')
-const isStandalonePwa = ref(false)
-let standaloneMedia: MediaQueryList | null = null
+const usernameRef = ref<HTMLInputElement | null>(null)
 
-const usernameInputProps = {
-  name: 'username',
-  autocomplete: 'username',
-  autocapitalize: 'none',
-  autocorrect: 'off',
-  spellcheck: 'false'
-} as const
+onMounted(() => {
+  usernameRef.value?.focus()
+})
 
-const passwordInputProps = {
-  name: 'current-password',
-  autocomplete: 'current-password',
-  autocapitalize: 'none',
-  autocorrect: 'off',
-  spellcheck: 'false'
-} as const
-
-async function submit() {
+async function handleSubmit() {
+  if (!username.value || !password.value) return
   try {
     await auth.signIn(username.value, password.value)
     notification.success({
       title: '登录成功',
-      content: `欢迎你，${auth.user?.username || username.value}`
+      content: `欢迎回来，${auth.user?.username || username.value}`
     })
     router.push('/library')
   } catch {
-    notification.error({
-      title: '登录失败',
-      content: auth.error || '请检查账号密码'
-    })
+    // error set by store
   }
 }
-
-function updateStandaloneMode() {
-  if (typeof window === 'undefined') return
-  const iosStandalone = 'standalone' in window.navigator && Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone)
-  const mediaStandalone = standaloneMedia?.matches ?? false
-  isStandalonePwa.value = iosStandalone || mediaStandalone
-}
-
-onMounted(() => {
-  if (typeof window === 'undefined') return
-  standaloneMedia = window.matchMedia('(display-mode: standalone), (display-mode: minimal-ui), (display-mode: fullscreen), (display-mode: window-controls-overlay)')
-  updateStandaloneMode()
-  if ('addEventListener' in standaloneMedia) {
-    standaloneMedia.addEventListener('change', updateStandaloneMode)
-  } else {
-    standaloneMedia.addListener(updateStandaloneMode)
-  }
-})
-
-onBeforeUnmount(() => {
-  if (!standaloneMedia) return
-  if ('removeEventListener' in standaloneMedia) {
-    standaloneMedia.removeEventListener('change', updateStandaloneMode)
-  } else {
-    standaloneMedia.removeListener(updateStandaloneMode)
-  }
-})
 </script>
 
 <style scoped>
@@ -113,92 +90,197 @@ onBeforeUnmount(() => {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 60vh;
+  min-height: 100dvh;
+  padding: 24px;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 40%, rgba(194, 101, 75, 0.04), transparent),
+    linear-gradient(180deg, var(--bg) 0%, #ece8e2 100%);
 }
 
-.card {
-  width: min(420px, 100%);
-  min-width: 320px;
-  border-radius: var(--radius-lg);
-}
-
-.brand-header {
+.login-card {
+  width: min(380px, 100%);
   display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 18px;
+  flex-direction: column;
+  gap: 32px;
 }
 
-.brand-mark {
-  width: 52px;
-  height: 52px;
-  border-radius: 16px;
-  background: linear-gradient(140deg, var(--accent), #d4a574);
+.login-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.login-mark {
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  background: linear-gradient(145deg, var(--accent), #d4a574);
   color: #fff;
   display: grid;
   place-items: center;
   font-family: 'Space Grotesk', Arial, sans-serif;
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  box-shadow: 0 14px 28px rgba(194, 101, 75, 0.24);
+  box-shadow: 0 16px 32px rgba(194, 101, 75, 0.18);
 }
 
-.brand-copy {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-
-.brand-name {
+.login-title {
   font-family: 'Space Grotesk', Arial, sans-serif;
-  font-size: 22px;
+  font-size: 28px;
   font-weight: 700;
-  line-height: 1.1;
   color: var(--ink);
+  margin: 0;
+  line-height: 1;
 }
 
-.brand-subtitle {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  color: rgba(92, 102, 114, 0.78);
-  text-transform: uppercase;
+.login-desc {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+  font-weight: 500;
 }
 
-.actions {
+.login-form {
   display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
-.actions--pwa {
-  justify-content: flex-end;
+.field {
+  position: relative;
+}
+
+.input {
+  width: 100%;
+  height: 50px;
+  padding: 0 16px;
+  border: 1px solid rgba(26, 26, 26, 0.10);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--ink);
+  font-family: 'Archivo', Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  outline: none;
+  transition:
+    border-color 0.18s,
+    box-shadow 0.18s,
+    background 0.18s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.input::placeholder {
+  color: rgba(102, 100, 96, 0.45);
+  font-weight: 400;
+}
+
+.input:hover {
+  border-color: rgba(26, 26, 26, 0.16);
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.input:focus {
+  border-color: rgba(194, 101, 75, 0.40);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(194, 101, 75, 0.08);
+}
+
+.submit-btn {
+  width: 100%;
+  height: 50px;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 24px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(145deg, var(--accent), #d47860);
+  color: #fff;
+  font-family: 'Space Grotesk', Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.12s, box-shadow 0.15s;
+  box-shadow: 0 10px 24px rgba(194, 101, 75, 0.22);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.submit-btn:hover:not(:disabled) {
+  opacity: 0.94;
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(194, 101, 75, 0.26);
+}
+
+.submit-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 6px 16px rgba(194, 101, 75, 0.18);
+}
+
+.submit-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 6px 16px rgba(194, 101, 75, 0.14);
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.login-error {
+  text-align: center;
+  font-size: 13px;
+  color: #b00020;
+  margin: 0;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: rgba(176, 0, 32, 0.06);
 }
 
 @media (max-width: 640px) {
   .login {
-    min-height: calc(100dvh - 40px);
+    padding: 20px;
     align-items: flex-start;
-    padding-top: 10vh;
+    padding-top: 14vh;
   }
 
-  .card {
-    min-width: 0;
+  .login-card {
+    gap: 28px;
   }
 
-  .brand-header {
-    margin-bottom: 16px;
+  .login-mark {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    font-size: 21px;
   }
 
-  .brand-mark {
-    width: 48px;
+  .login-title {
+    font-size: 26px;
+  }
+
+  .input {
     height: 48px;
-    border-radius: 14px;
-    font-size: 18px;
+    font-size: 16px; /* prevents iOS zoom */
   }
 
-  .brand-name {
-    font-size: 20px;
+  .submit-btn {
+    height: 48px;
   }
-
 }
 </style>
