@@ -134,21 +134,22 @@ defineExpose({
   min-height: inherit;
 }
 
-.stage {
-  background: transparent;
-  padding: 0;
-  border-radius: 0;
-  box-shadow: none;
-  max-width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  width: 100%;
-  min-height: 0;
-  touch-action: none;
-  cursor: grab;
-}
+ .stage {
+   background: transparent;
+   padding: 0;
+   border-radius: 0;
+   box-shadow: none;
+   max-width: 100%;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   overflow: hidden;
+   width: 100%;
+   flex: 1;
+   min-height: 0;
+   touch-action: none;
+   cursor: grab;
+ }
 
 .stage:fullscreen {
   width: 100vw;
@@ -161,12 +162,13 @@ defineExpose({
   cursor: grabbing;
 }
 
-.stage img {
-  max-width: min(100%, 1100px);
-  border-radius: 0;
-  display: block;
-  transition: transform 0.05s linear;
-}
+ .stage img {
+   max-width: min(100%, 1100px);
+   max-height: 100%;
+   border-radius: 0;
+   display: block;
+   transition: transform 0.05s linear;
+ }
 
 .caption {
   font-size: 13px;
@@ -182,27 +184,10 @@ defineExpose({
   color: rgba(92, 102, 114, 0.68);
 }
 
-@media (max-width: 960px) {
-  .viewer {
-    gap: 6px;
-  }
-
-  .stage {
-    min-height: calc(100dvh - 220px - var(--safe-area-top) - var(--safe-area-bottom));
-  }
-
-  .stage img {
-    max-height: calc(100dvh - 240px - var(--safe-area-top) - var(--safe-area-bottom));
-  }
-
-  .caption {
-    max-width: 100%;
-    padding: 0 4px;
-    font-size: 12px;
-  }
-
-  .hints {
-    display: none;
-  }
-}
+ @media (max-width: 960px) {
+   .viewer { gap: 6px; }
+   .stage img { max-height: 100%; }
+   .caption { max-width: 100%; padding: 0 4px; font-size: 12px; }
+   .hints { display: none; }
+ }
 </style>

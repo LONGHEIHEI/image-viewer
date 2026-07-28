@@ -333,22 +333,32 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
 </script>
 
 <style scoped>
-.image-page {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  padding: 0;
-  height: 100dvh;
-  width: 100%;
-}
+ .image-page {
+   display: flex;
+   flex-direction: column;
+   gap: 0;
+   padding: 0;
+   height: 100dvh;
+   width: 100%;
+   padding-top: calc(48px + var(--safe-area-top));
+ }
 
-.viewer-bar {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 10px 14px;
-  flex-shrink: 0;
-}
+ .viewer-bar {
+   position: fixed;
+   top: 0;
+   left: 0;
+   right: 0;
+   z-index: 20;
+   display: flex;
+   align-items: center;
+   gap: 2px;
+   height: 48px;
+   padding: var(--safe-area-top) 14px 0;
+   background: rgba(255, 255, 255, 0.82);
+   backdrop-filter: blur(12px);
+   -webkit-backdrop-filter: blur(12px);
+   border-bottom: 1px solid var(--stroke);
+ }
 
 .v-btn {
   display: inline-flex;
@@ -479,10 +489,10 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
   background: transparent !important;
 }
 
-.viewer-wrap :deep(.stage img) {
-  max-height: calc(100dvh - 80px);
-  max-width: 100%;
-}
+ .viewer-wrap :deep(.stage img) {
+   max-height: 100%;
+   max-width: 100%;
+ }
 
 .viewer-wrap :deep(.caption) { display: none; }
 .viewer-wrap :deep(.hints) { display: none; }
@@ -492,10 +502,15 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
 .info-label { font-size: 12px; color: var(--muted); }
 .info-value { font-size: 13px; color: var(--ink); word-break: break-all; }
 
-@media (max-width: 960px) {
-  .viewer-bar {
-    padding: 8px 10px;
-  }
+ @media (max-width: 960px) {
+   .image-page {
+     padding-top: calc(44px + var(--safe-area-top));
+   }
+
+   .viewer-bar {
+     height: 44px;
+     padding: var(--safe-area-top) 10px 0;
+   }
 
   .v-btn {
     width: 36px;
@@ -519,11 +534,7 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
   .v-arrow--l { left: 4px; }
   .v-arrow--r { right: 4px; }
 
-  .viewer-wrap :deep(.stage img) {
-    max-height: calc(100dvh - 130px - var(--safe-area-top) - var(--safe-area-bottom));
-  }
-
-  .v-pos-curr { font-size: 12px; }
+   .v-pos-curr { font-size: 12px; }
   .v-pos { padding: 0 6px; }
 }
 </style>
