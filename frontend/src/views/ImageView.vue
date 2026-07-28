@@ -351,7 +351,7 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
   height: 100dvh;
   width: 100%;
   padding-top: calc(36px + var(--safe-area-top));
-  padding-bottom: calc(48px + var(--safe-area-bottom));
+  padding-bottom: calc(64px + 16px + var(--safe-area-bottom));
 }
 
 .top-title {
@@ -431,8 +431,8 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 48px;
-  padding: 0 8px var(--safe-area-bottom);
+  height: 64px;
+  padding: 0 12px calc(16px + var(--safe-area-bottom));
   background: rgba(255, 255, 255, 0.82);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -535,7 +535,7 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
 @media (max-width: 960px) {
   .image-page {
     padding-top: calc(32px + var(--safe-area-top));
-    padding-bottom: calc(44px + var(--safe-area-bottom));
+    padding-bottom: calc(56px + 14px + var(--safe-area-bottom));
   }
 
   .top-title {
@@ -545,8 +545,8 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
   }
 
   .bottom-bar {
-    height: 44px;
-    padding: 0 6px var(--safe-area-bottom);
+    height: 56px;
+    padding: 0 10px calc(14px + var(--safe-area-bottom));
   }
 
   .v-btn {
