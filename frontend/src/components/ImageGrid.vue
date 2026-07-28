@@ -42,7 +42,6 @@
             :aria-label="isFavorite?.(getImageActionPath(image)) ? '取消收藏' : '加入收藏'"
             @click.stop="handleFavoriteToggle(image)"
           >
-            <span class="favorite-toggle__backdrop" aria-hidden="true"></span>
             <svg
               viewBox="0 0 24 24"
               class="favorite-toggle__icon"
@@ -415,66 +414,47 @@ function fileExt(name?: string) {
 
 .favorite-toggle {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 8px;
+  right: 8px;
   z-index: 3;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  width: 28px;
+  height: 28px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.42);
+  border: none;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
-  color: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 14px 30px rgba(20, 25, 35, 0.2);
-  backdrop-filter: blur(14px) saturate(1.2);
+  background: rgba(0, 0, 0, 0.22);
+  color: rgba(255, 255, 255, 0.92);
   cursor: pointer;
-  transition:
-    transform 0.18s ease,
-    box-shadow 0.18s ease,
-    border-color 0.18s ease,
-    background 0.18s ease,
-    color 0.18s ease;
+  transition: background 0.18s ease, color 0.18s ease;
 }
 
 .favorite-toggle:hover {
-  transform: translateY(-1px) scale(1.02);
-  box-shadow: 0 18px 34px rgba(20, 25, 35, 0.24);
-}
-
-.favorite-toggle__backdrop {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background:
-    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.34), transparent 52%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.06));
+  background: rgba(0, 0, 0, 0.36);
 }
 
 .favorite-toggle__icon {
   position: relative;
   z-index: 1;
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.9;
+  stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
 .favorite-toggle--active {
-  border-color: rgba(255, 123, 84, 0.78);
-  background: linear-gradient(135deg, rgba(194, 101, 75, 0.96), rgba(210, 130, 105, 0.9));
+  background: rgba(194, 101, 75, 0.9);
   color: #fff;
-  box-shadow: 0 16px 34px rgba(194, 101, 75, 0.28);
 }
 
 .favorite-toggle--active .favorite-toggle__icon {
   fill: currentColor;
-  stroke: rgba(255, 255, 255, 0.72);
+  stroke: none;
 }
 
 .thumb::after {
@@ -553,15 +533,15 @@ function fileExt(name?: string) {
   }
 
   .favorite-toggle {
-    top: 8px;
-    right: 8px;
-    width: 36px;
-    height: 36px;
+    top: 6px;
+    right: 6px;
+    width: 26px;
+    height: 26px;
   }
 
   .favorite-toggle__icon {
-    width: 17px;
-    height: 17px;
+    width: 13px;
+    height: 13px;
   }
 }
 </style>
