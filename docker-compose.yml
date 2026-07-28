@@ -19,7 +19,6 @@ services:
       - ./data:/app/backend/data
       - /data/download/images:/app/photos:ro
       - ./cache:/app/cache
-    start_period: 20s
     logging:
       driver: json-file
       options:
