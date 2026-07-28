@@ -6,6 +6,7 @@
          <path d="M15 6l-6 6l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
        </svg>
      </button>
+     <div class="v-filename">{{ name }}</div>
    </div>
 
     <div class="viewer-wrap">
@@ -43,7 +44,6 @@
      </div>
 
      <div class="bb-center">
-       <div class="v-filename">{{ name }}</div>
        <span v-if="showPositionBadge" class="v-pos">
          <span class="v-pos-curr">{{ currentPosition }}</span>
          <span class="v-pos-of">/</span>
@@ -348,21 +348,22 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
   padding-bottom: calc(48px + var(--safe-area-bottom));
 }
 
-.viewer-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  height: 48px;
-  padding: var(--safe-area-top) 14px 0;
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--stroke);
-}
+ .viewer-bar {
+   position: fixed;
+   top: 0;
+   left: 0;
+   right: 0;
+   z-index: 20;
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   height: 48px;
+   padding: var(--safe-area-top) 14px 0;
+   background: rgba(255, 255, 255, 0.82);
+   backdrop-filter: blur(12px);
+   -webkit-backdrop-filter: blur(12px);
+   border-bottom: 1px solid var(--stroke);
+ }
 
 .v-btn {
   display: inline-flex;
@@ -451,16 +452,9 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
 .bb-center {
   flex: 1;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   min-width: 0;
-  gap: 1px;
-}
-
-.bb-center .v-filename {
-  max-width: 200px;
-  text-align: center;
 }
 
 .bb-center .v-pos {
@@ -551,19 +545,15 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
      padding-bottom: calc(44px + var(--safe-area-bottom));
    }
 
-   .viewer-bar {
-     height: 44px;
-     padding: var(--safe-area-top) 10px 0;
-   }
+  .viewer-bar {
+    height: 44px;
+    gap: 6px;
+    padding: var(--safe-area-top) 10px 0;
+  }
 
    .bottom-bar {
      height: 44px;
      padding: 0 10px var(--safe-area-bottom);
-   }
-
-   .bb-center .v-filename {
-     max-width: 140px;
-     font-size: 12px;
    }
 
   .v-btn {
