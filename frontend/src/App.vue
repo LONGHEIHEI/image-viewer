@@ -1,6 +1,6 @@
 <template>
   <n-config-provider :locale="zhCN" :date-locale="dateZhCN" :theme-overrides="themeOverrides">
-    <n-notification-provider placement="top-right">
+    <n-notification-provider placement="top-right" :duration="3000">
       <n-layout class="app">
         <div v-if="showMobileTopbar" :class="['app-topbar', { 'app-topbar--image': isImageRoute }]">
           <div class="topbar-left">
