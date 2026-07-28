@@ -374,6 +374,7 @@ function handleFloatingNav() {
 }
 
 function logout() {
+  drawerActive.value = false
   auth.signOut()
   router.push('/login')
 }
