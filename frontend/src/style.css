@@ -325,3 +325,12 @@ button {
     gap: 8px;
   }
 }
+
+/* Naive UI message/notification safe-area offset */
+.n-message-container {
+  top: var(--safe-area-top) !important;
+}
+
+.n-notification-container {
+  top: var(--safe-area-top) !important;
+}
