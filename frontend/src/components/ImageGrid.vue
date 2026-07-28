@@ -111,7 +111,7 @@ const emit = defineEmits<{
   (event: 'open-image', path: string): void
 }>()
 
-const GAP = 10
+const GAP = 8
 
 const menuVisible = ref(false)
 const menuX = ref(0)
@@ -132,8 +132,9 @@ const menuOptions = [{ label: '属性', key: 'props' }]
 
 function estimateGridWidth() {
   if (typeof window === 'undefined') return 800
-  // Rough estimate: viewport minus sidebar (~240px) minus page gutters (~32px)
-  return Math.max(360, window.innerWidth - 280)
+  // Mobile: no sidebar, subtract gutters only. Desktop: subtract sidebar ~280px.
+  const mobile = window.innerWidth <= 960
+  return Math.max(360, window.innerWidth - (mobile ? 32 : 280))
 }
 
 function getColumnCount() {
@@ -322,9 +323,10 @@ function fileExt(name?: string) {
 <style scoped>
 .masonry {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: flex-start;
   width: 100%;
+  overflow: hidden;
 }
 
 .masonry-col {
@@ -332,7 +334,7 @@ function fileExt(name?: string) {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .tile {
