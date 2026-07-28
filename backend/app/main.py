@@ -10,6 +10,7 @@ from fastapi.responses import FileResponse
 from app.config import Settings
 from app.services import db
 from app.services.auth import ensure_admin_user
+from app.services.thumbnailer import cleanup_cache
 
 settings = Settings()
 app = FastAPI(title='Image Views')
@@ -46,12 +47,15 @@ _FRONTEND_DIST = _resolve_frontend_dist()
 
 @app.on_event('startup')
 def startup() -> None:
+    settings.check_secret_key()
     photo_root = Path(settings.photo_root)
     thumb_cache_dir = Path(settings.thumb_cache)
     photo_root.mkdir(parents=True, exist_ok=True)
     thumb_cache_dir.mkdir(parents=True, exist_ok=True)
     db.init_db()
     ensure_admin_user()
+    if Path(settings.thumb_cache).exists():
+        cleanup_cache(settings.thumb_cache, settings.thumb_cache_max_mb)
 
 
 @app.get('/api/health')

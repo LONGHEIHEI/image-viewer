@@ -74,7 +74,10 @@ def _list_7z_image_items(path: Path, names: list[str]) -> list[dict]:
         raise ArchiveSupportError('需要安装 py7zr 才能支持 7z')
     items: list[dict] = []
     with py7zr.SevenZipFile(path, 'r') as zf:
-        contents = zf.read(names)
+        try:
+            contents = zf.read(targets=names)
+        except TypeError:
+            contents = zf.read(names)
     for name in names:
         dimensions = {}
         handle = contents.get(name)
@@ -141,7 +144,10 @@ def _read_7z(path: Path, file_path: str):
     if py7zr is None:
         raise ArchiveSupportError('需要安装 py7zr 才能支持 7z')
     with py7zr.SevenZipFile(path, 'r') as zf:
-        contents = zf.read([file_path])
+        try:
+            contents = zf.read(targets=[file_path])
+        except TypeError:
+            contents = zf.read([file_path])
     if file_path not in contents:
         raise KeyError(file_path)
     return contents[file_path].read()

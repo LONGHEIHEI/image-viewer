@@ -20,6 +20,8 @@ def get_connection():
 
 
 def _column_exists(conn: sqlite3.Connection, table: str, column: str) -> bool:
+    if not table.isidentifier():
+        raise ValueError(f"Invalid table name: {table}")
     rows = conn.execute(f'PRAGMA table_info({table})').fetchall()
     return any(row['name'] == column for row in rows)
 
@@ -170,24 +172,25 @@ def create_user(username: str, password_hash: str, is_admin: bool, allowed_paths
         conn.close()
 
 
+
 def update_user(user_id: int, *, password_hash: str | None = None, is_admin: bool | None = None, allowed_paths: list[str] | None = None):
     conn = get_connection()
     try:
-        fields = []
-        values = []
+        set_parts: list[str] = []
+        values: list = []
         if password_hash is not None:
-            fields.append('password_hash = ?')
+            set_parts.append('password_hash = ?')
             values.append(password_hash)
         if is_admin is not None:
-            fields.append('is_admin = ?')
+            set_parts.append('is_admin = ?')
             values.append(1 if is_admin else 0)
         if allowed_paths is not None:
-            fields.append('allowed_paths = ?')
+            set_parts.append('allowed_paths = ?')
             values.append(json.dumps(allowed_paths))
-        if not fields:
+        if not set_parts:
             return
         values.append(user_id)
-        conn.execute(f"UPDATE users SET {', '.join(fields)} WHERE id = ?", values)
+        conn.execute(f"UPDATE users SET {', '.join(set_parts)} WHERE id = ?", values)
         conn.commit()
     finally:
         conn.close()
@@ -274,34 +277,34 @@ def update_collection(
 ):
     conn = get_connection()
     try:
-        fields = []
-        values = []
+        set_parts: list[str] = []
+        values: list = []
         if name is not None:
-            fields.append('name = ?')
+            set_parts.append('name = ?')
             values.append(name)
         if paths is not None:
-            fields.append('paths = ?')
+            set_parts.append('paths = ?')
             values.append(json.dumps(paths))
         if password_hash is not None:
-            fields.append('password_hash = ?')
+            set_parts.append('password_hash = ?')
             values.append(password_hash)
         if cover_path is not None:
-            fields.append('cover_path = ?')
+            set_parts.append('cover_path = ?')
             values.append(cover_path)
         if aggregate_subdirs is not None:
-            fields.append('aggregate_subdirs = ?')
+            set_parts.append('aggregate_subdirs = ?')
             values.append(1 if aggregate_subdirs else 0)
         if privacy_enabled is not None:
-            fields.append('privacy_enabled = ?')
+            set_parts.append('privacy_enabled = ?')
             values.append(1 if privacy_enabled else 0)
         if clear_password:
-            fields.append('password_hash = NULL')
+            set_parts.append('password_hash = NULL')
         if clear_cover:
-            fields.append('cover_path = NULL')
-        if not fields:
+            set_parts.append('cover_path = NULL')
+        if not set_parts:
             return
         values.append(collection_id)
-        conn.execute(f"UPDATE collections SET {', '.join(fields)} WHERE id = ?", values)
+        conn.execute(f"UPDATE collections SET {', '.join(set_parts)} WHERE id = ?", values)
         conn.commit()
     finally:
         conn.close()

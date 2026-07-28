@@ -44,8 +44,6 @@ ENV DB_PATH=/app/backend/data/app.db \
 
 EXPOSE 8010
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8010/api/health', timeout=3)" || exit 1
 
 WORKDIR /app/backend
 ENTRYPOINT ["docker-entrypoint.sh"]
