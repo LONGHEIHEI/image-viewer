@@ -1,15 +1,6 @@
 <template>
-  <div class="page image-page">
-   <div class="viewer-bar">
-     <button class="v-btn" @click="goBack" aria-label="返回">
-       <svg viewBox="0 0 24 24" width="20" height="20">
-         <path d="M15 6l-6 6l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-       </svg>
-     </button>
-     <div class="v-filename">{{ name }}</div>
-   </div>
-
-    <div class="viewer-wrap">
+ <div class="page image-page">
+   <div class="viewer-wrap">
       <button class="v-arrow v-arrow--l" :class="{ 'v-arrow--off': !hasPrev }" :disabled="!hasPrev" @click="goPrev" aria-label="上一张">
         <svg viewBox="0 0 24 24" width="24" height="24"><path d="M15 6l-6 6l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
@@ -27,9 +18,15 @@
       </button>
    </div>
 
-   <div class="bottom-bar">
-     <div class="bb-side">
-       <button class="v-btn" :class="{ 'v-btn--on': isCurrentFavorite }" @click="toggleFavorite" aria-label="收藏">
+  <div class="bottom-bar">
+    <button class="v-btn" @click="goBack" aria-label="返回">
+      <svg viewBox="0 0 24 24" width="20" height="20">
+        <path d="M15 6l-6 6l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+
+    <div class="bb-side">
+      <button class="v-btn" :class="{ 'v-btn--on': isCurrentFavorite }" @click="toggleFavorite" aria-label="收藏">
          <svg viewBox="0 0 24 24" width="18" height="18">
            <path d="M12 20.4l-1.1-.98C6.05 15.1 3 12.36 3 9.02C3 6.3 5.14 4.2 7.84 4.2c1.53 0 3 .72 3.96 1.85A5.07 5.07 0 0 1 15.76 4.2C18.46 4.2 20.6 6.3 20.6 9.02c0 3.34-3.05 6.08-7.9 10.4L12 20.4z"/>
          </svg>
@@ -344,26 +341,8 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
   padding: 0;
   height: 100dvh;
   width: 100%;
-  padding-top: calc(48px + var(--safe-area-top));
   padding-bottom: calc(48px + var(--safe-area-bottom));
 }
-
- .viewer-bar {
-   position: fixed;
-   top: 0;
-   left: 0;
-   right: 0;
-   z-index: 20;
-   display: flex;
-   align-items: center;
-   gap: 8px;
-   height: 48px;
-   padding: var(--safe-area-top) 14px 0;
-   background: rgba(255, 255, 255, 0.82);
-   backdrop-filter: blur(12px);
-   -webkit-backdrop-filter: blur(12px);
-   border-bottom: 1px solid var(--stroke);
- }
 
 .v-btn {
   display: inline-flex;
@@ -539,16 +518,9 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
 .info-label { font-size: 12px; color: var(--muted); }
 .info-value { font-size: 13px; color: var(--ink); word-break: break-all; }
 
- @media (max-width: 960px) {
-   .image-page {
-     padding-top: calc(44px + var(--safe-area-top));
-     padding-bottom: calc(44px + var(--safe-area-bottom));
-   }
-
-  .viewer-bar {
-    height: 44px;
-    gap: 6px;
-    padding: var(--safe-area-top) 10px 0;
+@media (max-width: 960px) {
+  .image-page {
+    padding-bottom: calc(44px + var(--safe-area-bottom));
   }
 
    .bottom-bar {
