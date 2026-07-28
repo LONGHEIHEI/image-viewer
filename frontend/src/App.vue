@@ -1,7 +1,8 @@
 <template>
   <n-config-provider :locale="zhCN" :date-locale="dateZhCN" :theme-overrides="themeOverrides">
     <n-notification-provider placement="top-right" :duration="3000">
-      <n-layout class="app">
+      <n-message-provider>
+        <n-layout class="app">
         <div v-if="showMobileTopbar" :class="['app-topbar', { 'app-topbar--image': isImageRoute }]">
           <div class="topbar-left">
             <n-button
@@ -144,6 +145,7 @@
           </n-drawer-content>
         </n-drawer>
       </n-layout>
+      </n-message-provider>
     </n-notification-provider>
   </n-config-provider>
 </template>
@@ -152,6 +154,7 @@
 import {
   NConfigProvider,
   NNotificationProvider,
+  NMessageProvider,
   NLayout,
   NLayoutSider,
   NLayoutContent,

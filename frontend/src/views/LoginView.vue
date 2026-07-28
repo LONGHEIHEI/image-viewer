@@ -55,12 +55,12 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useNotification } from 'naive-ui'
+import { useMessage } from 'naive-ui'
 import { useAuthStore } from '../store/auth'
 
 const auth = useAuthStore()
 const router = useRouter()
-const notification = useNotification()
+const message = useMessage()
 
 const username = ref('')
 const password = ref('')
@@ -74,10 +74,7 @@ async function handleSubmit() {
   if (!username.value || !password.value) return
   try {
     await auth.signIn(username.value, password.value)
-    notification.success({
-      title: '登录成功',
-      content: `欢迎回来，${auth.user?.username || username.value}`
-    })
+    message.success(`欢迎回来，${auth.user?.username || username.value}`)
     router.push('/library')
   } catch {
     // error set by store
