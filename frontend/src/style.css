@@ -6,13 +6,10 @@
   --mobile-topbar-height: 54px;
   --mobile-viewer-top-chrome-space: 64px;
   --mobile-viewer-toolbar-space: 92px;
-  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-top: max(env(safe-area-inset-top, 0px), 20px);
   --safe-area-right: env(safe-area-inset-right, 0px);
-  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-bottom: max(env(safe-area-inset-bottom, 0px), 22px);
   --safe-area-left: env(safe-area-inset-left, 0px);
-  /* fallback for browsers that don't support env() */
-  --safe-area-top-fb: 0px;
-  --safe-area-bottom-fb: 0px;
   --bg: #f4f2ef;
   --bg-2: #ffffff;
   --ink: #1a1a1a;
