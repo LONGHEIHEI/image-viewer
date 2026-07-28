@@ -235,7 +235,8 @@ const useImmersiveMobileChrome = computed(
 )
 const showMobileTopbar = computed(() => showMenu.value && isMobile.value && !useImmersiveMobileChrome.value && !isImageRoute.value)
 const showTopbarBackButton = computed(() => isCollectionRoute.value || isArchiveRoute.value || isLibrarySubfolder.value)
-const showFloatingBackButton = computed(() => useImmersiveMobileChrome.value)
+// ImageView 自带返回按钮，PWA 沉浸模式不需要额外浮动返回按钮
+const showFloatingBackButton = computed(() => false)
 const showFloatingMenuButton = computed(() => false)
 const showFloatingNavButton = computed(() => showFloatingBackButton.value || showFloatingMenuButton.value)
 const showSider = computed(() => showMenu.value && !isMobile.value)
