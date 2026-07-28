@@ -21,6 +21,10 @@
    </div>
 
   <div class="bottom-bar">
+    <button class="v-btn" :class="{ 'v-btn--off': !hasPrev }" :disabled="!hasPrev" @click="goPrev" aria-label="上一张">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M15 6l-6 6l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+
     <button class="v-btn" @click="goBack" aria-label="返回">
       <svg viewBox="0 0 24 24" width="20" height="20">
         <path d="M15 6l-6 6l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -58,9 +62,13 @@
            <line x1="21" y1="3" x2="14" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
            <line x1="3" y1="21" x2="10" y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
          </svg>
-       </button>
-     </div>
-   </div>
+      </button>
+    </div>
+
+    <button class="v-btn" :class="{ 'v-btn--off': !hasNext }" :disabled="!hasNext" @click="goNext" aria-label="下一张">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 6l6 6l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
 
    <!-- Desktop: side drawer -->
     <n-drawer v-if="!isMobile" v-model:show="infoVisible" placement="right" :width="420">
@@ -383,6 +391,11 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
 
 .v-btn:hover { background: rgba(0, 0, 0, 0.06); }
 .v-btn:active { background: rgba(0, 0, 0, 0.10); }
+
+.v-btn--off {
+  opacity: 0.25;
+  pointer-events: none;
+}
 
 .v-btn--on { color: #c2654b; }
 .v-btn--on svg { fill: #c2654b; stroke: #c2654b; }
