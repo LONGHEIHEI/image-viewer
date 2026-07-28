@@ -49,4 +49,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
 
 WORKDIR /app/backend
 ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["uvicorn", "app.main:app", "--port", "8010"]
+CMD ["uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8010"]
