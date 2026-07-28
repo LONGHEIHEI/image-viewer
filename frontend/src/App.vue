@@ -230,9 +230,9 @@ const isLibrarySubfolder = computed(() => route.path === '/library' && Boolean(r
 const isAlbumBrowseRoute = computed(
   () => isCollectionRoute.value || (route.path === '/folder' && Boolean(route.query.collection))
 )
-const useImmersiveMobileChrome = computed(
-  () => showMenu.value && isMobile.value && isStandalonePwa.value && isImageRoute.value
-)
+// PWA 沉浸模式已弃用，保留变量避免 breaking 其他引用
+// PWA 沉浸模式已弃用（浮动按钮已移除），保留变量避免 breaking
+const useImmersiveMobileChrome = computed(() => false)
 const showMobileTopbar = computed(() => showMenu.value && isMobile.value && !useImmersiveMobileChrome.value && !isImageRoute.value)
 const showTopbarBackButton = computed(() => isCollectionRoute.value || isArchiveRoute.value || isLibrarySubfolder.value)
 // ImageView 自带返回按钮，PWA 沉浸模式不需要额外浮动返回按钮
