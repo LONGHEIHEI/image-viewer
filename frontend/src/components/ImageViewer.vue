@@ -42,6 +42,19 @@ let startX = 0
 let startY = 0
 let startOffsetX = 0
 let startOffsetY = 0
+const pointers = new Map<number, { clientX: number; clientY: number }>()
+let pinchStartDist = 0
+let pinchStartScale = 1
+let pinchStartOffsetX = 0
+let pinchStartOffsetY = 0
+let pinchStartMidX = 0
+let pinchStartMidY = 0
+
+function ptrDist(a: { clientX: number; clientY: number }, b: { clientX: number; clientY: number }) {
+  const dx = a.clientX - b.clientX
+  const dy = a.clientY - b.clientY
+  return Math.sqrt(dx * dx + dy * dy)
+}
 
 function clamp(val: number, min: number, max: number) {
   return Math.min(Math.max(val, min), max)
@@ -59,24 +72,61 @@ function onWheel(event: WheelEvent) {
 }
 
 function onPointerDown(event: PointerEvent) {
-  dragging.value = true
-  startX = event.clientX
-  startY = event.clientY
-  startOffsetX = offsetX.value
-  startOffsetY = offsetY.value
+  pointers.set(event.pointerId, { clientX: event.clientX, clientY: event.clientY })
+
+  if (pointers.size === 1) {
+    dragging.value = true
+    startX = event.clientX
+    startY = event.clientY
+    startOffsetX = offsetX.value
+    startOffsetY = offsetY.value
+  } else if (pointers.size === 2) {
+    dragging.value = false
+    const pts = [...pointers.values()]
+    pinchStartDist = ptrDist(pts[0], pts[1])
+    pinchStartScale = scale.value
+    pinchStartOffsetX = offsetX.value
+    pinchStartOffsetY = offsetY.value
+    pinchStartMidX = (pts[0].clientX + pts[1].clientX) / 2
+    pinchStartMidY = (pts[0].clientY + pts[1].clientY) / 2
+  }
+
   const target = event.currentTarget as HTMLElement
   target.setPointerCapture(event.pointerId)
 }
 
 function onPointerMove(event: PointerEvent) {
-  if (!dragging.value) return
-  offsetX.value = startOffsetX + (event.clientX - startX)
-  offsetY.value = startOffsetY + (event.clientY - startY)
+  if (!pointers.has(event.pointerId)) return
+  pointers.set(event.pointerId, { clientX: event.clientX, clientY: event.clientY })
+
+  if (pointers.size === 1 && dragging.value) {
+    offsetX.value = startOffsetX + (event.clientX - startX)
+    offsetY.value = startOffsetY + (event.clientY - startY)
+  } else if (pointers.size === 2) {
+    const pts = [...pointers.values()]
+    const dist = ptrDist(pts[0], pts[1])
+    scale.value = clamp(Number((pinchStartScale * (dist / pinchStartDist)).toFixed(2)), 0.5, 4)
+    const mx = (pts[0].clientX + pts[1].clientX) / 2
+    const my = (pts[0].clientY + pts[1].clientY) / 2
+    offsetX.value = pinchStartOffsetX + (mx - pinchStartMidX)
+    offsetY.value = pinchStartOffsetY + (my - pinchStartMidY)
+  }
 }
 
 function onPointerUp(event: PointerEvent) {
-  if (!dragging.value) return
-  dragging.value = false
+  pointers.delete(event.pointerId)
+
+  if (pointers.size === 0) {
+    dragging.value = false
+  } else if (pointers.size === 1) {
+    const pts = [...pointers.values()]
+    dragging.value = true
+    startX = pts[0].clientX
+    startY = pts[0].clientY
+    startOffsetX = offsetX.value
+    startOffsetY = offsetY.value
+  }
+
   const target = event.currentTarget as HTMLElement
   target.releasePointerCapture(event.pointerId)
 }
