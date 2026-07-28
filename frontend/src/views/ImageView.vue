@@ -527,13 +527,29 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
     padding: 0 48px;
   }
 
+ .v-arrow {
+   width: 36px;
+   height: 36px;
+ }
+
   .v-arrow {
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
+    top: auto;
+    bottom: 12%;
+    transform: none;
   }
 
-  .v-arrow--l { left: 4px; }
-  .v-arrow--r { right: 4px; }
+  .v-arrow--l { left: calc(12px + var(--safe-area-left)); }
+  .v-arrow--r { right: calc(12px + var(--safe-area-right)); }
+
+  .v-arrow:hover:not(:disabled) {
+    transform: scale(1.08);
+  }
+
+  .v-arrow:active:not(:disabled) {
+    transform: scale(0.96);
+  }
 
    .v-pos-curr { font-size: 12px; }
   .v-pos { padding: 0 6px; }
