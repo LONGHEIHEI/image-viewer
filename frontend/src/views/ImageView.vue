@@ -13,58 +13,58 @@
    </div>
 
   <div class="bottom-bar">
-    <div class="bb-group">
-      <button class="v-btn" :class="{ 'v-btn--off': !hasPrev }" :disabled="!hasPrev" @click="goPrev" aria-label="上一张">
-        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M15 6l-6 6l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
+    <div class="bb-left">
       <button class="v-btn" @click="goBack" aria-label="返回">
-        <svg viewBox="0 0 24 24" width="18" height="18">
-          <path d="M15 6l-6 6l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M18 6L6 18"/>
+          <path d="M6 6l12 12"/>
         </svg>
       </button>
     </div>
 
-    <div class="bb-sep"></div>
+    <div class="bb-divider"></div>
 
-    <div class="bb-group">
+    <div class="bb-center">
+      <button class="v-btn v-btn--nav" :class="{ 'v-btn--off': !hasPrev }" :disabled="!hasPrev" @click="goPrev" aria-label="上一张">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+
+      <span v-if="showPositionBadge" class="bb-pos">
+        <span class="v-pos-curr">{{ currentPosition }}</span>
+        <span class="v-pos-div">/</span>
+        <span class="v-pos-total">{{ totalCount }}</span>
+      </span>
+      <span v-else class="bb-pos bb-pos--empty"></span>
+
+      <button class="v-btn v-btn--nav" :class="{ 'v-btn--off': !hasNext }" :disabled="!hasNext" @click="goNext" aria-label="下一张">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+    </div>
+
+    <div class="bb-divider"></div>
+
+    <div class="bb-right">
       <button class="v-btn" :class="{ 'v-btn--on': isCurrentFavorite }" @click="toggleFavorite" aria-label="收藏">
-        <svg viewBox="0 0 24 24" width="18" height="18">
-          <path d="M12 20.4l-1.1-.98C6.05 15.1 3 12.36 3 9.02C3 6.3 5.14 4.2 7.84 4.2c1.53 0 3 .72 3.96 1.85A5.07 5.07 0 0 1 15.76 4.2C18.46 4.2 20.6 6.3 20.6 9.02c0 3.34-3.05 6.08-7.9 10.4L12 20.4z"/>
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
         </svg>
       </button>
+
       <button class="v-btn" @click="infoVisible = true" aria-label="信息">
-        <svg viewBox="0 0 24 24" width="18" height="18">
-          <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
-          <line x1="12" y1="8" x2="12" y2="8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-          <line x1="12" y1="11" x2="12" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 16v-4"/>
+          <path d="M12 8h.01"/>
         </svg>
       </button>
-    </div>
 
-    <div class="bb-spacer"></div>
-
-    <span v-if="showPositionBadge" class="v-pos">
-      <span class="v-pos-curr">{{ currentPosition }}</span>
-      <span class="v-pos-of">/</span>
-      <span class="v-pos-total">{{ totalCount }}</span>
-    </span>
-
-    <div class="bb-spacer"></div>
-
-    <button class="v-btn" @click="toggleFullscreen" aria-label="全屏">
-      <svg viewBox="0 0 24 24" width="18" height="18">
-        <polyline points="15 3 21 3 21 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        <polyline points="9 21 3 21 3 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        <line x1="21" y1="3" x2="14" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        <line x1="3" y1="21" x2="10" y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-    </button>
-
-    <div class="bb-sep"></div>
-
-    <div class="bb-group">
-      <button class="v-btn" :class="{ 'v-btn--off': !hasNext }" :disabled="!hasNext" @click="goNext" aria-label="下一张">
-        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 6l6 6l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <button class="v-btn" @click="toggleFullscreen" aria-label="全屏">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 3h6v6"/>
+          <path d="M9 21H3v-6"/>
+          <path d="M21 3l-7 7"/>
+          <path d="M3 21l7-7"/>
+        </svg>
       </button>
     </div>
   </div>
@@ -362,7 +362,7 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
   z-index: 20;
   height: 36px;
   padding: var(--safe-area-top) 14px 0;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--muted);
   white-space: nowrap;
@@ -381,13 +381,16 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
   border: none;
   border-radius: 10px;
   background: transparent;
-  color: var(--ink);
+  color: var(--muted);
   cursor: pointer;
   flex-shrink: 0;
   transition: background 0.12s;
   -webkit-tap-highlight-color: transparent;
 }
 
+.v-btn svg {
+  display: block;
+}
 .v-btn:hover { background: rgba(0, 0, 0, 0.06); }
 .v-btn:active { background: rgba(0, 0, 0, 0.10); }
 
@@ -400,9 +403,9 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
 .v-btn--on svg { fill: #c2654b; stroke: #c2654b; }
 
 .v-filename {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 600;
-  color: var(--ink);
+  color: var(--muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -419,13 +422,65 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
   flex-shrink: 0;
 }
 
-.v-pos-curr {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ink);
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  padding: 0 8px var(--safe-area-bottom);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--stroke);
 }
 
-.v-pos-of {
+.bb-left,
+.bb-right {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.bb-center {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.bb-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--stroke);
+  flex-shrink: 0;
+}
+
+.bb-pos {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
+  font-variant-numeric: tabular-nums;
+  min-width: 48px;
+  justify-content: center;
+}
+
+.bb-pos--empty {
+  min-width: 48px;
+}
+
+.v-pos-curr {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.v-pos-div {
   font-size: 11px;
   color: var(--muted);
   margin: 0 1px;
@@ -436,41 +491,10 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
   color: var(--muted);
 }
 
-.bottom-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  gap: 0;
-  height: 48px;
-  padding: 0 14px var(--safe-area-bottom);
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-top: 1px solid var(--stroke);
-}
-
-.bb-group {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex-shrink: 0;
-}
-
-.bb-sep {
-  width: 1px;
-  height: 22px;
-  background: var(--stroke);
-  flex-shrink: 0;
-  margin: 0 6px;
-}
-
-.bb-spacer {
-  flex: 1;
-  min-width: 0;
+.v-btn--nav {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
 }
 
 .viewer-wrap {
@@ -520,14 +544,19 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
     font-size: 12px;
   }
 
-   .bottom-bar {
-     height: 44px;
-     padding: 0 10px var(--safe-area-bottom);
-   }
+  .bottom-bar {
+    height: 44px;
+    padding: 0 6px var(--safe-area-bottom);
+  }
 
   .v-btn {
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
+  }
+
+  .v-btn--nav {
+    width: 30px;
+    height: 30px;
   }
 
   .v-filename {
@@ -535,49 +564,9 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
     font-size: 12px;
   }
 
-  .v-pos-curr { font-size: 12px; }
-  .v-pos { padding: 0 6px; }
+  .v-pos-curr { font-size: 11px; }
+  .bb-pos { min-width: 40px; }
+  .bb-pos--empty { min-width: 40px; }
+  .bb-divider { height: 20px; }
 }
 </style>
-.bottom-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  gap: 0;
-  height: 48px;
-  padding: 0 14px var(--safe-area-bottom);
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-top: 1px solid var(--stroke);
-}
-
-.bb-side {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex-shrink: 0;
-}
-
-.bb-center {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-width: 0;
-  gap: 1px;
-}
-
-.bb-center .v-filename {
-  max-width: 200px;
-  text-align: center;
-}
-
-.bb-center .v-pos {
-  padding: 0;
-}
