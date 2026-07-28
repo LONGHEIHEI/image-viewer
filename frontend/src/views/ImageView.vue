@@ -2,22 +2,14 @@
 <div class="page image-page">
   <div class="top-title">{{ name }}</div>
 
-  <div class="viewer-wrap">
-      <button class="v-arrow v-arrow--l" :class="{ 'v-arrow--off': !hasPrev }" :disabled="!hasPrev" @click="goPrev" aria-label="上一张">
-        <svg viewBox="0 0 24 24" width="24" height="24"><path d="M15 6l-6 6l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-
-      <ImageViewer
-        ref="viewerRef"
-        :src="src"
-        :name="name"
-        @scale-change="scale = $event"
-        @fullscreen-change="isFullscreen = $event"
-      />
-
-      <button class="v-arrow v-arrow--r" :class="{ 'v-arrow--off': !hasNext }" :disabled="!hasNext" @click="goNext" aria-label="下一张">
-        <svg viewBox="0 0 24 24" width="24" height="24"><path d="M9 6l6 6l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
+   <div class="viewer-wrap">
+     <ImageViewer
+       ref="viewerRef"
+       :src="src"
+       :name="name"
+       @scale-change="scale = $event"
+       @fullscreen-change="isFullscreen = $event"
+     />
    </div>
 
   <div class="bottom-bar">
@@ -480,50 +472,7 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
   display: flex;
   align-items: stretch;
   justify-content: center;
-  padding: 0 58px;
-}
-
-.v-arrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
   padding: 0;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(8px);
-  color: var(--ink);
-  cursor: pointer;
-  transition: opacity 0.18s, transform 0.18s, background 0.12s;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.v-arrow--l { left: 8px; }
-.v-arrow--r { right: 8px; }
-
-.v-arrow:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.94);
-  transform: translateY(-50%) scale(1.08);
-}
-
-.v-arrow:active:not(:disabled) {
-  transform: translateY(-50%) scale(0.96);
-}
-
-.v-arrow--off {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.v-arrow:disabled {
-  opacity: 0.25;
-  cursor: default;
 }
 
 .viewer-wrap :deep(.viewer) {
@@ -578,24 +527,7 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
     font-size: 12px;
   }
 
-  .viewer-wrap {
-    padding: 0 48px;
-  }
-
-  .v-arrow {
-    width: 40px;
-    height: 40px;
-    top: 50%;
-    transform: translateY(-50%);
-  }
-
-  .v-arrow--l { left: 4px; }
-  .v-arrow--r { right: 4px; }
-
-  .v-arrow:hover:not(:disabled) { transform: translateY(-50%) scale(1.08); }
-  .v-arrow:active:not(:disabled) { transform: translateY(-50%) scale(0.96); }
-
-   .v-pos-curr { font-size: 12px; }
+  .v-pos-curr { font-size: 12px; }
   .v-pos { padding: 0 6px; }
 }
 </style>
