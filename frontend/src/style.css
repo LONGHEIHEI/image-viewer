@@ -6,9 +6,9 @@
   --mobile-topbar-height: 54px;
   --mobile-viewer-top-chrome-space: 64px;
   --mobile-viewer-toolbar-space: 92px;
-  --safe-area-top: max(env(safe-area-inset-top, 0px), 20px);
+  --safe-area-top: env(safe-area-inset-top, 0px);
   --safe-area-right: env(safe-area-inset-right, 0px);
-  --safe-area-bottom: max(env(safe-area-inset-bottom, 0px), 22px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --safe-area-left: env(safe-area-inset-left, 0px);
   --bg: #f4f2ef;
   --bg-2: #ffffff;
@@ -59,10 +59,10 @@ body {
 }
 
 html[data-pwa-preview='1'] {
-  --safe-area-top: max(env(safe-area-inset-top, 47px), 47px);
-  --safe-area-right: max(env(safe-area-inset-right, 0px), 0px);
-  --safe-area-bottom: max(env(safe-area-inset-bottom, 34px), 34px);
-  --safe-area-left: max(env(safe-area-inset-left, 0px), 0px);
+  --safe-area-top: env(safe-area-inset-top, 47px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 34px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
 }
 
 a {
