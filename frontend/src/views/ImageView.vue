@@ -351,7 +351,7 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
   height: 100dvh;
   width: 100%;
   padding-top: calc(36px + var(--safe-area-top));
-  padding-bottom: calc(80px + 20px + var(--safe-area-bottom));
+  padding-bottom: calc(100px + var(--safe-area-bottom));
 }
 
 .top-title {
@@ -431,8 +431,8 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 80px;
-  padding: 0 14px calc(20px + var(--safe-area-bottom));
+  height: calc(100px + var(--safe-area-bottom));
+  padding: 0 14px;
   background: rgba(255, 255, 255, 0.82);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -535,7 +535,7 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
 @media (max-width: 960px) {
   .image-page {
     padding-top: calc(32px + var(--safe-area-top));
-    padding-bottom: calc(68px + 16px + var(--safe-area-bottom));
+    padding-bottom: calc(84px + var(--safe-area-bottom));
   }
 
   .top-title {
@@ -545,8 +545,8 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
   }
 
   .bottom-bar {
-    height: 68px;
-    padding: 0 12px calc(16px + var(--safe-area-bottom));
+    height: calc(84px + var(--safe-area-bottom));
+    padding: 0 12px;
   }
 
   .v-btn {
