@@ -22,15 +22,15 @@
     />
     <div v-else-if="showEmptyState" class="empty">{{ emptyText }}</div>
 
-    <div class="load" v-if="hasMore">
-      <n-button type="primary" :loading="loading" @click="emit('load-more')">加载更多</n-button>
+    <div ref="sentinelRef" class="load-sentinel" v-if="hasMore">
+      <span v-if="loading" class="load-spinner"></span>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { NButton, NInput } from 'naive-ui'
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { NInput } from 'naive-ui'
 import type { FolderItem } from '../api/client'
 import ImageGrid from './ImageGrid.vue'
 
@@ -80,6 +80,29 @@ const emit = defineEmits<{
   (event: 'back'): void
   (event: 'load-more'): void
 }>()
+
+const sentinelRef = ref<HTMLElement | null>(null)
+let observer: IntersectionObserver | null = null
+
+function setupObserver() {
+  if (observer) observer.disconnect()
+  if (!sentinelRef.value) return
+  observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting && props.hasMore && !props.loading) {
+      emit('load-more')
+    }
+  }, { rootMargin: '200px' })
+  observer.observe(sentinelRef.value)
+}
+
+onMounted(() => { setupObserver() })
+onBeforeUnmount(() => { if (observer) observer.disconnect() })
+
+watch(() => props.hasMore, () => {
+  if (props.hasMore) {
+    setTimeout(setupObserver, 100)
+  }
+})
 
 const searchTerm = ref('')
 
