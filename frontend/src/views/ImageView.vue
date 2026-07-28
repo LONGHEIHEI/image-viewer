@@ -1,6 +1,8 @@
 <template>
- <div class="page image-page">
-   <div class="viewer-wrap">
+<div class="page image-page">
+  <div class="top-title">{{ name }}</div>
+
+  <div class="viewer-wrap">
       <button class="v-arrow v-arrow--l" :class="{ 'v-arrow--off': !hasPrev }" :disabled="!hasPrev" @click="goPrev" aria-label="上一张">
         <svg viewBox="0 0 24 24" width="24" height="24"><path d="M15 6l-6 6l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
@@ -341,7 +343,25 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
   padding: 0;
   height: 100dvh;
   width: 100%;
+  padding-top: calc(36px + var(--safe-area-top));
   padding-bottom: calc(48px + var(--safe-area-bottom));
+}
+
+.top-title {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  height: 36px;
+  padding: var(--safe-area-top) 14px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
 }
 
 .v-btn {
@@ -520,7 +540,14 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
 
 @media (max-width: 960px) {
   .image-page {
+    padding-top: calc(32px + var(--safe-area-top));
     padding-bottom: calc(44px + var(--safe-area-bottom));
+  }
+
+  .top-title {
+    height: 32px;
+    padding: var(--safe-area-top) 10px 0;
+    font-size: 12px;
   }
 
    .bottom-bar {
