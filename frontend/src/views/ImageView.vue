@@ -546,8 +546,9 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
   }
 
   .bottom-bar {
-    height: calc(52px + var(--safe-area-bottom));
-    padding: 0 12px;
+    box-sizing: content-box;
+    height: 48px;
+    padding: 0 12px var(--safe-area-bottom);
   }
 
   .v-btn {
