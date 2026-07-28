@@ -424,6 +424,49 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
   color: var(--muted);
 }
 
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  height: 48px;
+  padding: 0 14px var(--safe-area-bottom);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--stroke);
+}
+
+.bb-side {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.bb-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  gap: 1px;
+}
+
+.bb-center .v-filename {
+  max-width: 200px;
+  text-align: center;
+}
+
+.bb-center .v-pos {
+  padding: 0;
+}
+
 .viewer-wrap {
   flex: 1;
   position: relative;
