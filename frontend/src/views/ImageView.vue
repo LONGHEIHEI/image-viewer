@@ -430,7 +430,7 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
   position: relative;
   min-height: 0;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
   padding: 0 58px;
 }

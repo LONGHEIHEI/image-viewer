@@ -131,7 +131,7 @@ defineExpose({
   align-items: center;
   gap: 8px;
   width: 100%;
-  min-height: inherit;
+  height: 100%;
 }
 
  .stage {
