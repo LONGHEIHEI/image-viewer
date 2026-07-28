@@ -16,9 +16,9 @@ services:
     environment:
       TZ: Asia/Shanghai
     volumes:
-      - /data/docker/image-views/data:/app/backend/data
-      - /mnt/pool1/download/picture:/app/photos:ro
-      - /data/docker/image-views/cache:/app/cache
+      - ./data:/app/backend/data
+      - /data/download/images/:/app/photos:ro
+      - ./cache:/app/cache
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8010/api/health', timeout=3)\" || exit 1"]
       interval: 30s
