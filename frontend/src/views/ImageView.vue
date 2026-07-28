@@ -540,6 +540,7 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
   }
 
   .top-title {
+    box-sizing: content-box;
     height: 32px;
     padding: var(--safe-area-top) 10px 0;
     font-size: 12px;
