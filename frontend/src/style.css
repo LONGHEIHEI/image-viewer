@@ -10,6 +10,9 @@
   --safe-area-right: env(safe-area-inset-right, 0px);
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --safe-area-left: env(safe-area-inset-left, 0px);
+  /* fallback for browsers that don't support env() */
+  --safe-area-top-fb: 0px;
+  --safe-area-bottom-fb: 0px;
   --bg: #f4f2ef;
   --bg-2: #ffffff;
   --ink: #1a1a1a;
@@ -59,10 +62,10 @@ body {
 }
 
 html[data-pwa-preview='1'] {
-  --safe-area-top: 10px;
-  --safe-area-right: 0px;
-  --safe-area-bottom: 12px;
-  --safe-area-left: 0px;
+  --safe-area-top: max(env(safe-area-inset-top, 47px), 47px);
+  --safe-area-right: max(env(safe-area-inset-right, 0px), 0px);
+  --safe-area-bottom: max(env(safe-area-inset-bottom, 34px), 34px);
+  --safe-area-left: max(env(safe-area-inset-left, 0px), 0px);
 }
 
 a {
