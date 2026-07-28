@@ -1,45 +1,12 @@
 <template>
   <div class="page image-page">
-    <div class="viewer-bar">
-      <button class="v-btn" @click="goBack" aria-label="返回">
-        <svg viewBox="0 0 24 24" width="20" height="20">
-          <path d="M15 6l-6 6l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
-
-      <div class="v-filename">{{ name }}</div>
-
-      <div class="v-spacer"></div>
-
-      <span v-if="showPositionBadge" class="v-pos">
-        <span class="v-pos-curr">{{ currentPosition }}</span>
-        <span class="v-pos-of">/</span>
-        <span class="v-pos-total">{{ totalCount }}</span>
-      </span>
-
-      <button class="v-btn" :class="{ 'v-btn--on': isCurrentFavorite }" @click="toggleFavorite" aria-label="收藏">
-        <svg viewBox="0 0 24 24" width="18" height="18">
-          <path d="M12 20.4l-1.1-.98C6.05 15.1 3 12.36 3 9.02C3 6.3 5.14 4.2 7.84 4.2c1.53 0 3 .72 3.96 1.85A5.07 5.07 0 0 1 15.76 4.2C18.46 4.2 20.6 6.3 20.6 9.02c0 3.34-3.05 6.08-7.9 10.4L12 20.4z"/>
-        </svg>
-      </button>
-
-      <button class="v-btn" @click="infoVisible = true" aria-label="信息">
-        <svg viewBox="0 0 24 24" width="18" height="18">
-          <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
-          <line x1="12" y1="8" x2="12" y2="8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-          <line x1="12" y1="11" x2="12" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      </button>
-
-      <button class="v-btn" @click="toggleFullscreen" aria-label="全屏">
-        <svg viewBox="0 0 24 24" width="18" height="18">
-          <polyline points="15 3 21 3 21 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <polyline points="9 21 3 21 3 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <line x1="21" y1="3" x2="14" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          <line x1="3" y1="21" x2="10" y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      </button>
-    </div>
+   <div class="viewer-bar">
+     <button class="v-btn" @click="goBack" aria-label="返回">
+       <svg viewBox="0 0 24 24" width="20" height="20">
+         <path d="M15 6l-6 6l6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+       </svg>
+     </button>
+   </div>
 
     <div class="viewer-wrap">
       <button class="v-arrow v-arrow--l" :class="{ 'v-arrow--off': !hasPrev }" :disabled="!hasPrev" @click="goPrev" aria-label="上一张">
@@ -57,9 +24,46 @@
       <button class="v-arrow v-arrow--r" :class="{ 'v-arrow--off': !hasNext }" :disabled="!hasNext" @click="goNext" aria-label="下一张">
         <svg viewBox="0 0 24 24" width="24" height="24"><path d="M9 6l6 6l-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
-    </div>
+   </div>
 
-    <!-- Desktop: side drawer -->
+   <div class="bottom-bar">
+     <div class="bb-side">
+       <button class="v-btn" :class="{ 'v-btn--on': isCurrentFavorite }" @click="toggleFavorite" aria-label="收藏">
+         <svg viewBox="0 0 24 24" width="18" height="18">
+           <path d="M12 20.4l-1.1-.98C6.05 15.1 3 12.36 3 9.02C3 6.3 5.14 4.2 7.84 4.2c1.53 0 3 .72 3.96 1.85A5.07 5.07 0 0 1 15.76 4.2C18.46 4.2 20.6 6.3 20.6 9.02c0 3.34-3.05 6.08-7.9 10.4L12 20.4z"/>
+         </svg>
+       </button>
+       <button class="v-btn" @click="infoVisible = true" aria-label="信息">
+         <svg viewBox="0 0 24 24" width="18" height="18">
+           <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
+           <line x1="12" y1="8" x2="12" y2="8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+           <line x1="12" y1="11" x2="12" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+         </svg>
+       </button>
+     </div>
+
+     <div class="bb-center">
+       <div class="v-filename">{{ name }}</div>
+       <span v-if="showPositionBadge" class="v-pos">
+         <span class="v-pos-curr">{{ currentPosition }}</span>
+         <span class="v-pos-of">/</span>
+         <span class="v-pos-total">{{ totalCount }}</span>
+       </span>
+     </div>
+
+     <div class="bb-side">
+       <button class="v-btn" @click="toggleFullscreen" aria-label="全屏">
+         <svg viewBox="0 0 24 24" width="18" height="18">
+           <polyline points="15 3 21 3 21 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+           <polyline points="9 21 3 21 3 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+           <line x1="21" y1="3" x2="14" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+           <line x1="3" y1="21" x2="10" y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+         </svg>
+       </button>
+     </div>
+   </div>
+
+   <!-- Desktop: side drawer -->
     <n-drawer v-if="!isMobile" v-model:show="infoVisible" placement="right" :width="420">
       <n-drawer-content title="图片信息">
         <div class="info-list">
@@ -333,32 +337,32 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
 </script>
 
 <style scoped>
- .image-page {
-   display: flex;
-   flex-direction: column;
-   gap: 0;
-   padding: 0;
-   height: 100dvh;
-   width: 100%;
-   padding-top: calc(48px + var(--safe-area-top));
- }
+.image-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  height: 100dvh;
+  width: 100%;
+  padding-top: calc(48px + var(--safe-area-top));
+  padding-bottom: calc(48px + var(--safe-area-bottom));
+}
 
- .viewer-bar {
-   position: fixed;
-   top: 0;
-   left: 0;
-   right: 0;
-   z-index: 20;
-   display: flex;
-   align-items: center;
-   gap: 2px;
-   height: 48px;
-   padding: var(--safe-area-top) 14px 0;
-   background: rgba(255, 255, 255, 0.82);
-   backdrop-filter: blur(12px);
-   -webkit-backdrop-filter: blur(12px);
-   border-bottom: 1px solid var(--stroke);
- }
+.viewer-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  height: 48px;
+  padding: var(--safe-area-top) 14px 0;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--stroke);
+}
 
 .v-btn {
   display: inline-flex;
@@ -392,11 +396,6 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
   text-overflow: ellipsis;
   min-width: 0;
   max-width: 280px;
-}
-
-.v-spacer {
-  flex: 1;
-  min-width: 8px;
 }
 
 .v-pos {
@@ -506,11 +505,22 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
  @media (max-width: 960px) {
    .image-page {
      padding-top: calc(44px + var(--safe-area-top));
+     padding-bottom: calc(44px + var(--safe-area-bottom));
    }
 
    .viewer-bar {
      height: 44px;
      padding: var(--safe-area-top) 10px 0;
+   }
+
+   .bottom-bar {
+     height: 44px;
+     padding: 0 10px var(--safe-area-bottom);
+   }
+
+   .bb-center .v-filename {
+     max-width: 140px;
+     font-size: 12px;
    }
 
   .v-btn {
@@ -527,31 +537,62 @@ onUnmounted(() => { window.removeEventListener('keydown', handleKey) })
     padding: 0 48px;
   }
 
- .v-arrow {
-   width: 36px;
-   height: 36px;
- }
-
   .v-arrow {
-    width: 44px;
-    height: 44px;
-    top: auto;
-    bottom: 12%;
-    transform: none;
+    width: 40px;
+    height: 40px;
+    top: 50%;
+    transform: translateY(-50%);
   }
 
-  .v-arrow--l { left: calc(12px + var(--safe-area-left)); }
-  .v-arrow--r { right: calc(12px + var(--safe-area-right)); }
+  .v-arrow--l { left: 4px; }
+  .v-arrow--r { right: 4px; }
 
-  .v-arrow:hover:not(:disabled) {
-    transform: scale(1.08);
-  }
-
-  .v-arrow:active:not(:disabled) {
-    transform: scale(0.96);
-  }
+  .v-arrow:hover:not(:disabled) { transform: translateY(-50%) scale(1.08); }
+  .v-arrow:active:not(:disabled) { transform: translateY(-50%) scale(0.96); }
 
    .v-pos-curr { font-size: 12px; }
   .v-pos { padding: 0 6px; }
 }
 </style>
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  height: 48px;
+  padding: 0 14px var(--safe-area-bottom);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--stroke);
+}
+
+.bb-side {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.bb-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  gap: 1px;
+}
+
+.bb-center .v-filename {
+  max-width: 200px;
+  text-align: center;
+}
+
+.bb-center .v-pos {
+  padding: 0;
+}
